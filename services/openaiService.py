@@ -1,9 +1,8 @@
-"""OpenAI Service Wrapper"""
+"""OpenAI API Service Wrapper"""
 import asyncio
 import logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime
-import openai
 from openai import AsyncOpenAI
 import tiktoken
 import time
@@ -13,55 +12,47 @@ from pathlib import Path
 from services.rate_limiter import RateLimiter
 
 class OpenAIService:
-    """Service for managing OpenAI API Calls"""
+    """Service for managing OpenAI API calls"""
     
-    def __init__(
-        self,
-        api_key: str,
-        model: str = "gpt-4o",
-        rate_limit: int = 60,
-        max_retries: int = 3
-        ):
+    def __init__(self, api_key: str, model: str = "gpt-4-turbo-preview", 
+                 rate_limit: int = 60, max_retries: int = 3):
         """
-        Initialize OpenAI Service
-
+        Initialize OpenAI service
+        
         Args:
-            api_key: OpenAI API Key
-            model: OpenAI Model to Use
-            rate_limit: Rate Limit for API Calls
-            max_retries: Maximum Number of Retries for API Calls
+            api_key: OpenAI API key
+            model: Default model to use
+            rate_limit: Requests per minute limit
+            max_retries: Maximum retry attempts
         """
         self.api_key = api_key
         self.model = model
         self.max_retries = max_retries
         self.logger = logging.getLogger(__name__)
-
+        
         # Initialize async client
-        self.client = AsyncOpenAI(api_key=self.api_key)
-
-        # Initialize Rate Limiter
-        self.rate_limiter = RateLimiter(rate_limit. 60) # per minute
-
+        self.client = AsyncOpenAI(api_key=api_key)
+        
+        # Initialize rate limiter
+        self.rate_limiter = RateLimiter(rate_limit, 60)  # per minute
+        
         # Token encoding for the model
         try:
-            self.encoding = tiktoken.encoding_for_model(self.model)
+            self.encoding = tiktoken.encoding_for_model(model)
         except:
             self.encoding = tiktoken.get_encoding("cl100k_base")
-
+        
         # Statistics
         self.total_requests = 0
         self.total_tokens = 0
         self.total_cost = 0.0
-
-    async def chat_completion(
-        self,
-        messages: List[Dict[str, Any]],
-        model: Optional[str] = None,
-        temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        response_format: Optional[Dict] = None,
-        **kwargs
-    ) -> Dict[str, Any]:
+        
+    async def chat_completion(self, messages: List[Dict[str, str]], 
+                            model: Optional[str] = None,
+                            temperature: float = 0.7,
+                            max_tokens: Optional[int] = None,
+                            response_format: Optional[Dict] = None,
+                            **kwargs) -> Dict[str, Any]:
         """
         Create a chat completion with retry logic
         
@@ -77,33 +68,34 @@ class OpenAIService:
             API response dictionary
         """
         model = model or self.model
-
-        # Wait for Rate Limit
+        
+        # Wait for rate limit
         await self.rate_limiter.acquire()
-
-        # Prepare Request
+        
+        # Prepare request
         request_params = {
-            'model': model,
-            'messages': messages,
-            'temperature': temperature,
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
             **kwargs
         }
-
-        if max_tokens:
-            request_params['max_tokens'] = max_tokens
         
+        if max_tokens:
+            request_params["max_tokens"] = max_tokens
+            
         if response_format:
-            request_params['response_format'] = response_format
-
+            request_params["response_format"] = response_format
+        
         # Retry logic
+        last_error = None
         for attempt in range(self.max_retries):
             try:
-                self.logger.info(f"OpenAI API Call Attempt {attempt + 1} of {self.max_retries}")
-
-                # Make API Call
+                self.logger.debug(f"OpenAI API call attempt {attempt + 1}")
+                
+                # Make API call
                 response = await self.client.chat.completions.create(**request_params)
-
-                # Update Statistics
+                
+                # Update statistics
                 self.total_requests += 1
                 if response.usage:
                     self.total_tokens += response.usage.total_tokens
@@ -112,108 +104,104 @@ class OpenAIService:
                         response.usage.completion_tokens,
                         model
                     )
-
-                # Convert to Dictionary
+                
+                # Convert to dictionary
                 result = {
-                    'id': response.id,
-                    'model': response.model,
-                    'created': response.created,
-                    'choices': [
+                    "id": response.id,
+                    "model": response.model,
+                    "created": response.created,
+                    "choices": [
                         {
-                            'index': choice.index,
-                            'message': {
-                                'role': choice.message.role,
-                                'content': choice.message.content
+                            "index": choice.index,
+                            "message": {
+                                "role": choice.message.role,
+                                "content": choice.message.content
                             },
-                            'finish_reason': choice.finish_reason
+                            "finish_reason": choice.finish_reason
                         }
+                        for choice in response.choices
                     ],
-                    'usage': {
-                        'prompt_tokens': response.usage.prompt_tokens,
-                        'completion_tokens': response.usage.completion_tokens,
-                        'total_tokens': response.usage.total_tokens
+                    "usage": {
+                        "prompt_tokens": response.usage.prompt_tokens,
+                        "completion_tokens": response.usage.completion_tokens,
+                        "total_tokens": response.usage.total_tokens
                     } if response.usage else None
                 }
-
-                self.logger.info(f"OpenAI API Call Successful (tokens: {response.usage.total_tokens if response.usage else 'N/A'})")
+                
+                self.logger.info(f"OpenAI API call successful (tokens: {response.usage.total_tokens if response.usage else 'N/A'})")
                 return result
-
+                
             except openai.RateLimitError as e:
-                wait_time = min(2 ** attempt * 5, 60) # Exponential backoff, max 60 seconds
-                self.logger.warning(f"Rate Limit Hit. Waiting {wait_time}s {str(e)}")
+                wait_time = min(2 ** attempt * 5, 60)  # Exponential backoff, max 60s
+                self.logger.warning(f"Rate limit hit, waiting {wait_time}s: {str(e)}")
                 await asyncio.sleep(wait_time)
                 last_error = e
-
+                
             except openai.APIError as e:
-                self.logger.error(f"OpenAI API Error: {str(e)}")
+                self.logger.error(f"OpenAI API error: {str(e)}")
                 last_error = e
                 if attempt < self.max_retries - 1:
                     await asyncio.sleep(2 ** attempt)
-
+                    
             except Exception as e:
-                self.logger.error(f"Unexpected Error: {str(e)}")
+                self.logger.error(f"Unexpected error: {str(e)}")
                 last_error = e
                 break
-
+        
         # All retries failed
-        raise Exception(f"OpenAI API Call Failed after {self.max_retries} attempts: {str(last_error)}")
-
-    async def transcribe_audio(
-        self,
-        audio_file_path: str,
-        model: str = 'whisper-1',
-        language: Optional[str] = None,
-        prompt: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        raise Exception(f"OpenAI API call failed after {self.max_retries} attempts: {str(last_error)}")
+    
+    async def transcribe_audio(self, audio_file_path: str, 
+                             model: str = "whisper-1",
+                             language: Optional[str] = None,
+                             prompt: Optional[str] = None) -> Dict[str, Any]:
         """
-        Transcribe Audio Using OpenAI Whisper
+        Transcribe audio using Whisper API
         
         Args:
-            audio_file_path: Path to the audio file
-            model: Whisper Model to Use
-            language: Language Code (e.g., 'en', 'es', 'fr')
-            prompt: Optional Prompt for the Transcriber
-        
+            audio_file_path: Path to audio file
+            model: Whisper model to use
+            language: Language code (e.g., 'zh' for Chinese)
+            prompt: Optional prompt to guide transcription
+            
         Returns:
-            Transcription Result Dictionary
+            Transcription result dictionary
         """
-
-        # Validate File
+        # Validate file
         file_path = Path(audio_file_path)
         if not file_path.exists():
-            raise FileNotFoundError(f"Audio File Not Found: {audio_file_path}")
-
+            raise FileNotFoundError(f"Audio file not found: {audio_file_path}")
+        
         # Check file size (max 25MB for Whisper)
         file_size = file_path.stat().st_size
         if file_size > 25 * 1024 * 1024:
             raise ValueError(f"Audio file too large: {file_size / 1024 / 1024:.1f}MB (max 25MB)")
-
-        # Wait for Rate Limit
+        
+        # Wait for rate limit
         await self.rate_limiter.acquire()
-
-        # Retry Logic
+        
+        # Retry logic
         last_error = None
         for attempt in range(self.max_retries):
             try:
-                self.logger.debug(f"Whisper API Call Attempt {attempt + 1} of {self.max_retries}")
-
-                # Open file and make API Call
-                with open(audio_file_path, 'rb') as audio_file:
-                    params = {'model': model, 'file': audio_file}
-
+                self.logger.debug(f"Whisper API call attempt {attempt + 1}")
+                
+                # Open file and make API call
+                with open(audio_file_path, "rb") as audio_file:
+                    params = {"model": model, "file": audio_file}
+                    
                     if language:
-                        params['language'] = language
-
+                        params["language"] = language
                     if prompt:
-                        params['prompt'] = prompt
-
+                        params["prompt"] = prompt
+                    
                     response = await self.client.audio.transcriptions.create(**params)
-
-                    # Update Statistics
-                    self.total_requests += 1
-
-                # Calculate approximate cost 
-                # Estimate based on file size
+                
+                # Update statistics
+                self.total_requests += 1
+                
+                # Calculate approximate cost (Whisper charges per minute)
+                # Estimate based on file size (very rough approximation)
                 estimated_minutes = file_size / (128 * 1024 * 60)  # Assume 128kbps
                 self.total_cost += estimated_minutes * 0.006  # $0.006 per minute
                 
