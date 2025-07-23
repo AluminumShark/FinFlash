@@ -29,6 +29,7 @@ class Orchestrator:
                  sentiment_agent: Optional[SentimentAnalysisAgent] = None,
                  extraction_agent: Optional[ExtractionAgent] = None,
                  risk_agent: Optional[RiskAssessmentAgent] = None,
+                 summary_agent: Optional[Any] = None,  # Add summary agent
                  logger: Optional[logging.Logger] = None):
         """
         Initialize Orchestrator
@@ -46,6 +47,7 @@ class Orchestrator:
         self.sentiment_agent = sentiment_agent
         self.extraction_agent = extraction_agent
         self.risk_agent = risk_agent
+        self.summary_agent = summary_agent  # Store summary agent
         
         self.logger = logger or logging.getLogger(__name__)
         
@@ -268,8 +270,35 @@ class Orchestrator:
             # Complete batch job
             await self._complete_batch_job(batch_job_id)
             
-            # Generate summary
+            # Generate summary using Summary Agent if available
             successful_analyses = [r for r in analysis_results if r.get("success", False)]
+            
+            summary_report = None
+            if hasattr(self, 'summary_agent') and self.summary_agent and successful_analyses:
+                try:
+                    # Prepare data for summary agent
+                    all_analysis_results = {}
+                    for analysis in successful_analyses:
+                        if analysis.get("analysis", {}).get("analysis_results"):
+                            # Merge all analysis results
+                            for agent_name, agent_result in analysis["analysis"]["analysis_results"].items():
+                                if agent_name not in all_analysis_results:
+                                    all_analysis_results[agent_name] = []
+                                all_analysis_results[agent_name].append(agent_result)
+                    
+                    # Generate comprehensive summary report
+                    self.logger.info("Generating comprehensive summary report")
+                    summary_result = await self.summary_agent({
+                        "analysis_results": all_analysis_results,
+                        "num_articles": len(successful_analyses),
+                        "search_query": search_query
+                    })
+                    
+                    if summary_result.get("success", False):
+                        summary_report = summary_result.get("result")
+                        
+                except Exception as e:
+                    self.logger.error(f"Error generating summary report: {str(e)}")
             
             return {
                 "job_id": job_id,
@@ -278,7 +307,8 @@ class Orchestrator:
                 "total_articles": len(articles),
                 "analyzed_successfully": len(successful_analyses),
                 "analysis_results": analysis_results,
-                "aggregate_summary": self._generate_aggregate_summary(successful_analyses)
+                "aggregate_summary": self._generate_aggregate_summary(successful_analyses),
+                "summary_report": summary_report  # Add comprehensive summary report
             }
             
         except Exception as e:

@@ -488,6 +488,105 @@
             padding: 3rem 0;
             margin-top: 5rem;
         }
+        
+        /* Enhanced Analysis Results Styles */
+        .bg-gradient {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+        
+        .recommendation-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+        
+        .recommendation-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .buy-card {
+            border-color: rgba(74, 222, 128, 0.3);
+            background: rgba(74, 222, 128, 0.05);
+        }
+        
+        .sell-card {
+            border-color: rgba(248, 113, 113, 0.3);
+            background: rgba(248, 113, 113, 0.05);
+        }
+        
+        .watch-card {
+            border-color: rgba(251, 191, 36, 0.3);
+            background: rgba(251, 191, 36, 0.05);
+        }
+        
+        .accordion-button {
+            background-color: var(--bg-dark-secondary) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .accordion-button:not(.collapsed) {
+            background-color: rgba(102, 126, 234, 0.1) !important;
+            border-bottom: 2px solid var(--accent-color);
+        }
+        
+        .accordion-body {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-secondary);
+        }
+        
+        .analysis-section {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Demo Section Styles */
+        .bg-dark-secondary {
+            background: var(--bg-dark-secondary);
+        }
+        
+        .demo-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .form-control:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .btn-lg {
+            padding: 0.75rem 2rem;
+        }
 
         /* Responsive */
         @media (max-width: 768px) {
@@ -543,10 +642,14 @@
                 <p class="hero-subtitle">AI-powered multi-agent system for real-time financial news analysis</p>
                 
                 <div class="row justify-content-center mt-5">
-                    <div class="col-lg-8">
-                        <div class="search-container">
+                    <div class="col-lg-10">
+                        <div class="search-container p-4">
+                            <h5 class="text-white mb-4">
+                                <i class="fas fa-search me-2"></i>Financial Analysis Center
+                            </h5>
+                            
                             <!-- Tab Navigation -->
-                            <ul class="nav nav-tabs justify-content-center" id="searchTabs" role="tablist">
+                            <ul class="nav nav-tabs justify-content-center mb-4" id="searchTabs" role="tablist">
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link active" id="text-search-tab" data-bs-toggle="tab" data-bs-target="#text-search" type="button">
                                         <i class="fas fa-search me-2"></i>Text Search
@@ -568,18 +671,56 @@
                             <div class="tab-content" id="searchTabContent">
                                 <!-- Text Search Tab -->
                                 <div class="tab-pane fade show active" id="text-search" role="tabpanel">
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" id="searchInput" placeholder="Enter stock ticker or financial topic...">
-                                        <button class="btn btn-primary" type="button" onclick="searchAndAnalyze()">
-                                            <i class="fas fa-analysis me-2"></i>Analyze
-                                        </button>
+                                    <div class="mb-4">
+                                        <label class="form-label text-light">Enter your financial query:</label>
+                                        <div class="input-group">
+                                            <input 
+                                                type="text" 
+                                                class="form-control form-control-lg bg-dark text-light border-secondary" 
+                                                id="searchInput" 
+                                                placeholder="e.g., US IPO market fintech 25 billion, Tesla earnings, Fed interest rate..."
+                                                value="US IPO market fintech debut 25 billion primary equity market sectors"
+                                            >
+                                            <button class="btn btn-primary btn-lg" type="button" onclick="searchAndAnalyze()">
+                                                <i class="fas fa-chart-line me-2"></i>Analyze Now
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Try queries about IPO markets, earnings reports, market trends, or specific companies</small>
+                                    </div>
+                                    
+                                    <!-- Analysis Options -->
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <label class="form-label text-light">Processing Mode:</label>
+                                            <select class="form-select bg-dark text-light border-secondary" id="searchMode">
+                                                <option value="parallel" selected>Parallel (Fastest)</option>
+                                                <option value="sequential">Sequential</option>
+                                                <option value="adaptive">Adaptive</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label text-light">Results:</label>
+                                            <select class="form-select bg-dark text-light border-secondary" id="searchNumResults">
+                                                <option value="5">5 Articles</option>
+                                                <option value="10" selected>10 Articles</option>
+                                                <option value="20">20 Articles</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label text-light">Time Range:</label>
+                                            <select class="form-select bg-dark text-light border-secondary" id="searchDaysBack">
+                                                <option value="1">Past 24 Hours</option>
+                                                <option value="7" selected>Past Week</option>
+                                                <option value="30">Past Month</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                                 
                                 <!-- Audio Upload Tab -->
                                 <div class="tab-pane fade" id="audio-upload" role="tabpanel">
                                     <div class="mb-3">
-                                        <input class="form-control" type="file" id="audioFile" accept=".mp3,.mp4,.mpeg,.mpga,.m4a,.wav,.webm">
+                                        <input class="form-control bg-dark text-light border-secondary" type="file" id="audioFile" accept=".mp3,.mp4,.mpeg,.mpga,.m4a,.wav,.webm">
                                         <button class="btn btn-primary mt-3" type="button" onclick="analyzeAudio()">
                                             <i class="fas fa-upload me-2"></i>Transcribe & Analyze
                                         </button>
@@ -590,7 +731,7 @@
                                 <!-- YouTube Tab -->
                                 <div class="tab-pane fade" id="youtube-search" role="tabpanel">
                                     <div class="input-group">
-                                        <input type="text" class="form-control" id="youtubeUrl" placeholder="Enter YouTube video URL...">
+                                        <input type="text" class="form-control bg-dark text-light border-secondary" id="youtubeUrl" placeholder="Enter YouTube video URL...">
                                         <button class="btn btn-primary" type="button" onclick="analyzeYouTube()">
                                             <i class="fab fa-youtube me-2"></i>Analyze
                                         </button>
@@ -609,10 +750,16 @@
     <section id="results-section" class="py-5" style="display: none;">
         <div class="container">
             <h2 class="section-title">Analysis Results</h2>
-            <div id="loading-container" class="loading-container" style="display: none;">
-                <div class="loading-spinner"></div>
-                <p class="mt-3 text-secondary">Analyzing financial news...</p>
+            
+            <div id="loading-indicator" style="display: none;">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-light mt-3">AI agents are analyzing financial data...</p>
+                </div>
             </div>
+            
             <div id="results-container"></div>
         </div>
     </section>
@@ -802,46 +949,57 @@
         const drawAgentFlowDiagram = () => {
             const diagramDefinition = `
             graph TB
-                Start[User Input] --> InputType{Input Type?}
+                subgraph "Input Sources"
+                    Text[Text Query]
+                    Audio[Audio File]
+                    YouTube[YouTube URL]
+                end
                 
-                InputType -->|Text Query| ResearchAgent[<i class='fas fa-search-dollar'></i><br/>Research Agent]
-                InputType -->|Audio File| SpeechAgent[<i class='fas fa-microphone-alt'></i><br/>Speech Agent]
-                InputType -->|YouTube URL| SpeechAgent
+                subgraph "Data Collection Agents"
+                    ResearchAgent[<i class='fas fa-search'></i><br/>Research Agent<br/>Exa API]
+                    SpeechAgent[<i class='fas fa-microphone'></i><br/>Speech Agent<br/>Whisper API]
+                end
                 
-                ResearchAgent -->|News Articles| Orchestrator[<i class='fas fa-brain'></i><br/>Orchestrator]
-                SpeechAgent -->|Transcribed Text| Orchestrator
+                subgraph "Analysis Agents"
+                    SentimentAgent[<i class='fas fa-smile'></i><br/>Sentiment Agent<br/>GPT-4o]
+                    ExtractionAgent[<i class='fas fa-database'></i><br/>Extraction Agent<br/>GPT-4o]
+                    RiskAgent[<i class='fas fa-exclamation-triangle'></i><br/>Risk Agent<br/>GPT-4o]
+                end
                 
-                Orchestrator --> ProcessingMode{Processing Mode}
+                Orchestrator[<i class='fas fa-brain'></i><br/>Orchestrator]
+                SummaryAgent[<i class='fas fa-file-alt'></i><br/>Summary Agent<br/>GPT-4o]
+                Output[<i class='fas fa-chart-line'></i><br/>Analysis Report]
                 
-                ProcessingMode -->|Parallel| ParallelProcess[Parallel Processing]
-                ProcessingMode -->|Sequential| SequentialProcess[Sequential Processing]
+                %% Flow connections
+                Text --> ResearchAgent
+                Audio --> SpeechAgent
+                YouTube --> SpeechAgent
                 
-                ParallelProcess --> SentimentAgent[<i class='fas fa-smile'></i><br/>Sentiment Agent]
-                ParallelProcess --> ExtractionAgent[<i class='fas fa-database'></i><br/>Extraction Agent]
-                ParallelProcess --> RiskAgent[<i class='fas fa-exclamation-triangle'></i><br/>Risk Agent]
+                ResearchAgent --> Orchestrator
+                SpeechAgent --> Orchestrator
                 
-                SequentialProcess --> SentimentAgent
-                SentimentAgent -->|Context| ExtractionAgent
-                ExtractionAgent -->|Context| RiskAgent
+                Orchestrator --> SentimentAgent
+                Orchestrator --> ExtractionAgent
+                Orchestrator --> RiskAgent
                 
-                SentimentAgent --> Results[Analysis Results]
-                ExtractionAgent --> Results
-                RiskAgent --> Results
+                SentimentAgent --> SummaryAgent
+                ExtractionAgent --> SummaryAgent
+                RiskAgent --> SummaryAgent
                 
-                Results --> SummaryAgent[<i class='fas fa-file-alt'></i><br/>Summary Agent]
+                SummaryAgent --> Output
                 
-                SummaryAgent --> FinalReport[Final Report]
-                FinalReport --> UserInterface[User Interface]
+                %% Styling
+                classDef inputStyle fill:#667eea,stroke:#fff,stroke-width:2px,color:#fff
+                classDef collectionStyle fill:#48bb78,stroke:#38a169,stroke-width:2px,color:#fff
+                classDef analysisStyle fill:#ed8936,stroke:#dd6b20,stroke-width:2px,color:#fff
+                classDef orchestratorStyle fill:#9f7aea,stroke:#805ad5,stroke-width:2px,color:#fff
+                classDef outputStyle fill:#4ade80,stroke:#fff,stroke-width:2px,color:#000
                 
-                classDef inputClass fill:#667eea,stroke:#fff,stroke-width:2px,color:#fff
-                classDef agentClass fill:#1a1a1a,stroke:#667eea,stroke-width:2px,color:#fff
-                classDef processClass fill:#2a2a2a,stroke:#764ba2,stroke-width:2px,color:#fff
-                classDef outputClass fill:#4ade80,stroke:#fff,stroke-width:2px,color:#000
-                
-                class Start,InputType inputClass
-                class ResearchAgent,SpeechAgent,SentimentAgent,ExtractionAgent,RiskAgent,SummaryAgent,Orchestrator agentClass
-                class ProcessingMode,ParallelProcess,SequentialProcess processClass
-                class FinalReport,UserInterface outputClass
+                class Text,Audio,YouTube inputStyle
+                class ResearchAgent,SpeechAgent collectionStyle
+                class SentimentAgent,ExtractionAgent,RiskAgent analysisStyle
+                class Orchestrator,SummaryAgent orchestratorStyle
+                class Output outputStyle
             `;
             
             const element = document.getElementById('mermaid-diagram');
@@ -903,6 +1061,10 @@
         // Search and analyze function
         async function searchAndAnalyze() {
             const query = document.getElementById('searchInput').value;
+            const mode = document.getElementById('searchMode').value;
+            const numResults = parseInt(document.getElementById('searchNumResults').value);
+            const daysBack = parseInt(document.getElementById('searchDaysBack').value);
+            
             if (!query) {
                 showAlert('Please enter a search query', 'warning');
                 return;
@@ -919,9 +1081,9 @@
                     },
                     body: JSON.stringify({
                         query: query,
-                        num_results: 5,
-                        days_back: 7,
-                        mode: 'parallel'
+                        num_results: numResults,
+                        days_back: daysBack,
+                        mode: mode
                     })
                 });
 
@@ -1039,7 +1201,158 @@
 
             let html = '<div class="row">';
             
-            // Display summary
+            // Display comprehensive summary report if available
+            if (result.summary_report) {
+                const summary = result.summary_report;
+                
+                // Executive Summary Section
+                if (summary.executive_summary) {
+                    html += `
+                        <div class="col-12 mb-4">
+                            <div class="results-card bg-gradient">
+                                <h4 class="text-white mb-4">
+                                    <i class="fas fa-chart-pie me-2"></i>Executive Summary
+                                </h4>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary mb-3">Key Findings</h6>
+                                        <ul class="list-unstyled">
+                                            ${summary.executive_summary.key_findings ? 
+                                                summary.executive_summary.key_findings.map(finding => 
+                                                    `<li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>${finding}</li>`
+                                                ).join('') : '<li>No key findings available</li>'}
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary mb-3">Market Outlook</h6>
+                                        <p class="text-light">${summary.executive_summary.market_outlook || 'No market outlook available'}</p>
+                                        <div class="mt-3">
+                                            <span class="badge bg-info">Confidence: ${summary.executive_summary.confidence_level || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Investment Recommendations Section
+                if (summary.investment_recommendations) {
+                    const recommendations = summary.investment_recommendations;
+                    html += `
+                        <div class="col-12 mb-4">
+                            <div class="results-card">
+                                <h4 class="text-white mb-4">
+                                    <i class="fas fa-coins me-2"></i>Investment Recommendations
+                                </h4>
+                                <div class="row">
+                                    ${recommendations.buy_signals && recommendations.buy_signals.length > 0 ? `
+                                        <div class="col-md-4 mb-3">
+                                            <div class="recommendation-card buy-card">
+                                                <h6 class="text-success mb-3"><i class="fas fa-arrow-up me-2"></i>Buy Signals</h6>
+                                                <ul class="list-unstyled">
+                                                    ${recommendations.buy_signals.map(signal => 
+                                                        `<li class="mb-2">${signal}</li>`
+                                                    ).join('')}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                    ${recommendations.sell_signals && recommendations.sell_signals.length > 0 ? `
+                                        <div class="col-md-4 mb-3">
+                                            <div class="recommendation-card sell-card">
+                                                <h6 class="text-danger mb-3"><i class="fas fa-arrow-down me-2"></i>Sell Signals</h6>
+                                                <ul class="list-unstyled">
+                                                    ${recommendations.sell_signals.map(signal => 
+                                                        `<li class="mb-2">${signal}</li>`
+                                                    ).join('')}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                    ${recommendations.watch_list && recommendations.watch_list.length > 0 ? `
+                                        <div class="col-md-4 mb-3">
+                                            <div class="recommendation-card watch-card">
+                                                <h6 class="text-warning mb-3"><i class="fas fa-eye me-2"></i>Watch List</h6>
+                                                <ul class="list-unstyled">
+                                                    ${recommendations.watch_list.map(item => 
+                                                        `<li class="mb-2">${item}</li>`
+                                                    ).join('')}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Detailed Analysis Section
+                if (summary.detailed_analysis) {
+                    const analysis = summary.detailed_analysis;
+                    html += `
+                        <div class="col-12 mb-4">
+                            <div class="results-card">
+                                <h4 class="text-white mb-4">
+                                    <i class="fas fa-microscope me-2"></i>Detailed Analysis
+                                </h4>
+                                <div class="accordion" id="detailedAnalysisAccordion">
+                                    ${analysis.sentiment_overview ? `
+                                        <div class="accordion-item bg-dark">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#sentimentCollapse">
+                                                    <i class="fas fa-smile me-2"></i>Sentiment Analysis
+                                                </button>
+                                            </h2>
+                                            <div id="sentimentCollapse" class="accordion-collapse collapse show" data-bs-parent="#detailedAnalysisAccordion">
+                                                <div class="accordion-body">
+                                                    <p><strong>Current Sentiment:</strong> ${analysis.sentiment_overview.current_sentiment || 'N/A'}</p>
+                                                    <p><strong>Drivers:</strong> ${analysis.sentiment_overview.sentiment_drivers ? analysis.sentiment_overview.sentiment_drivers.join(', ') : 'N/A'}</p>
+                                                    <p><strong>Risks:</strong> ${analysis.sentiment_overview.sentiment_risks ? analysis.sentiment_overview.sentiment_risks.join(', ') : 'N/A'}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                    ${analysis.risk_assessment ? `
+                                        <div class="accordion-item bg-dark">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#riskCollapse">
+                                                    <i class="fas fa-exclamation-triangle me-2"></i>Risk Assessment
+                                                </button>
+                                            </h2>
+                                            <div id="riskCollapse" class="accordion-collapse collapse" data-bs-parent="#detailedAnalysisAccordion">
+                                                <div class="accordion-body">
+                                                    <p><strong>Primary Risks:</strong> ${analysis.risk_assessment.primary_risks ? analysis.risk_assessment.primary_risks.join(', ') : 'N/A'}</p>
+                                                    <p><strong>Opportunities:</strong> ${analysis.risk_assessment.opportunity_areas ? analysis.risk_assessment.opportunity_areas.join(', ') : 'N/A'}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                    ${analysis.market_implications ? `
+                                        <div class="accordion-item bg-dark">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#marketCollapse">
+                                                    <i class="fas fa-chart-line me-2"></i>Market Implications
+                                                </button>
+                                            </h2>
+                                            <div id="marketCollapse" class="accordion-collapse collapse" data-bs-parent="#detailedAnalysisAccordion">
+                                                <div class="accordion-body">
+                                                    <p><strong>Short Term (1-7 days):</strong> ${analysis.market_implications.short_term || 'N/A'}</p>
+                                                    <p><strong>Medium Term (1-4 weeks):</strong> ${analysis.market_implications.medium_term || 'N/A'}</p>
+                                                    <p><strong>Long Term (1-6 months):</strong> ${analysis.market_implications.long_term || 'N/A'}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Display aggregate summary (existing code)
             if (result.aggregate_summary) {
                 html += `
                     <div class="col-12 mb-4">
@@ -1243,7 +1556,7 @@
         }
 
         function showLoading(show) {
-            document.getElementById('loading-container').style.display = show ? 'flex' : 'none';
+            document.getElementById('loading-indicator').style.display = show ? 'block' : 'none';
             document.getElementById('results-container').style.display = show ? 'none' : 'block';
         }
 
@@ -1260,13 +1573,10 @@
         }
 
         // Initialize on page load
-        window.onload = function() {
-            loadStatus();
+        document.addEventListener('DOMContentLoaded', function() {
             drawAgentFlowDiagram();
-            
-            // Refresh status every 30 seconds
-            setInterval(loadStatus, 30000);
-        };
+            loadStatus();
+        });
     </script>
 </body>
 </html> 

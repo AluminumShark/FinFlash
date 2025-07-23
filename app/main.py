@@ -94,6 +94,7 @@ def initialize_services():
             sentiment_agent=sentiment_agent,
             extraction_agent=extraction_agent,
             risk_agent=risk_agent,
+            summary_agent=summary_agent,  # Add summary agent here
             logger=logger
         )
         

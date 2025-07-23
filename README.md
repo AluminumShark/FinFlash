@@ -7,41 +7,58 @@ An AI-powered multi-agent system for real-time financial news analysis using Ope
 ### Multi-Agent Architecture
 
 ```mermaid
-mindmap
-  root((FinFlash))
-    Input Sources
-      Text News
-      Audio News
-      API Search
-    Processing Agents
-      Research Agent
-        Exa API Integration
-        News Collection
-        Source Filtering
-      Speech Agent
-        Whisper API
-        Audio Transcription
-        Quality Analysis
-    Analysis Agents
-      Sentiment Agent
-        Market Sentiment
-        Fear/Greed Index
-        Emotional Analysis
-      Extraction Agent
-        Entity Recognition
-        Event Detection
-        Metrics Extraction
-      Risk Agent
-        Risk Assessment
-        Investment Advice
-        Market Impact
-    Output Generation
-      Summary Agent
-        Report Generation
-        Insights Synthesis
-      API Endpoints
-        RESTful API
-        WebSocket Updates
+graph TB
+    subgraph "Input Sources"
+        Text[Text Query]
+        Audio[Audio File]
+        YouTube[YouTube URL]
+    end
+    
+    subgraph "Data Collection Agents"
+        ResearchAgent[Research Agent<br/>Exa API]
+        SpeechAgent[Speech Agent<br/>Whisper API]
+    end
+    
+    subgraph "Analysis Agents"
+        SentimentAgent[Sentiment Agent<br/>GPT-4o]
+        ExtractionAgent[Extraction Agent<br/>GPT-4o]
+        RiskAgent[Risk Agent<br/>GPT-4o]
+    end
+    
+    Orchestrator[Orchestrator]
+    SummaryAgent[Summary Agent<br/>GPT-4o]
+    Output[Analysis Report]
+    
+    %% Flow connections
+    Text --> ResearchAgent
+    Audio --> SpeechAgent
+    YouTube --> SpeechAgent
+    
+    ResearchAgent --> Orchestrator
+    SpeechAgent --> Orchestrator
+    
+    Orchestrator --> SentimentAgent
+    Orchestrator --> ExtractionAgent
+    Orchestrator --> RiskAgent
+    
+    SentimentAgent --> SummaryAgent
+    ExtractionAgent --> SummaryAgent
+    RiskAgent --> SummaryAgent
+    
+    SummaryAgent --> Output
+    
+    %% Styling
+    classDef inputStyle fill:#667eea,stroke:#fff,stroke-width:2px,color:#fff
+    classDef collectionStyle fill:#48bb78,stroke:#38a169,stroke-width:2px,color:#fff
+    classDef analysisStyle fill:#ed8936,stroke:#dd6b20,stroke-width:2px,color:#fff
+    classDef orchestratorStyle fill:#9f7aea,stroke:#805ad5,stroke-width:2px,color:#fff
+    classDef outputStyle fill:#4ade80,stroke:#fff,stroke-width:2px,color:#000
+    
+    class Text,Audio,YouTube inputStyle
+    class ResearchAgent,SpeechAgent collectionStyle
+    class SentimentAgent,ExtractionAgent,RiskAgent analysisStyle
+    class Orchestrator,SummaryAgent orchestratorStyle
+    class Output outputStyle
 ```
 
 - **Multi-Agent Architecture**: Six specialized AI agents working together
@@ -276,98 +293,102 @@ graph TB
         RestAPI[REST API]
     end
     
-    subgraph "Coordination Layer"
+    subgraph "Agent System"
         Orchestrator[Orchestrator]
-    end
-    
-    subgraph "Agent Layer"
-        ResearchAgent[Research Agent<br/>Exa API]
-        SpeechAgent[Speech Agent<br/>Whisper API]
         
-        subgraph "Analysis Agents"
+        subgraph "Collection"
+            ResearchAgent[Research Agent<br/>Exa API]
+            SpeechAgent[Speech Agent<br/>Whisper API]
+        end
+        
+        subgraph "Analysis"
             SentimentAgent[Sentiment Agent<br/>GPT-4o]
             ExtractionAgent[Extraction Agent<br/>GPT-4o]
             RiskAgent[Risk Agent<br/>GPT-4o]
         end
+        
+        SummaryAgent[Summary Agent<br/>GPT-4o]
     end
     
-    subgraph "Data Layer"
-        Database[(Database<br/>PostgreSQL)]
-        Redis[(Redis Cache)]
+    subgraph "Storage"
+        Database[(Database)]
+        Cache[(Redis)]
     end
     
     %% Client connections
     WebUI --> Orchestrator
     RestAPI --> Orchestrator
     
-    %% Orchestrator to agents
+    %% Agent flow
     Orchestrator --> ResearchAgent
     Orchestrator --> SpeechAgent
-    Orchestrator --> SentimentAgent
-    Orchestrator --> ExtractionAgent
-    Orchestrator --> RiskAgent
+    ResearchAgent --> SentimentAgent
+    ResearchAgent --> ExtractionAgent
+    ResearchAgent --> RiskAgent
+    SpeechAgent --> SentimentAgent
+    SpeechAgent --> ExtractionAgent
+    SpeechAgent --> RiskAgent
     
-    %% Agents to database
-    ResearchAgent --> Database
-    SpeechAgent --> Database
-    SentimentAgent --> Database
-    ExtractionAgent --> Database
-    RiskAgent --> Database
+    SentimentAgent --> SummaryAgent
+    ExtractionAgent --> SummaryAgent
+    RiskAgent --> SummaryAgent
     
-    %% Redis connections
-    Orchestrator -.-> Redis
-    ResearchAgent -.-> Redis
+    %% Storage connections
+    SummaryAgent --> Database
+    Orchestrator -.-> Cache
     
     %% Styling
-    classDef clientStyle fill:#667eea,stroke:#764ba2,stroke-width:2px,color:#fff
-    classDef agentStyle fill:#48bb78,stroke:#38a169,stroke-width:2px,color:#fff
+    classDef clientStyle fill:#667eea,stroke:#fff,stroke-width:2px,color:#fff
+    classDef orchestratorStyle fill:#9f7aea,stroke:#805ad5,stroke-width:2px,color:#fff
+    classDef collectionStyle fill:#48bb78,stroke:#38a169,stroke-width:2px,color:#fff
     classDef analysisStyle fill:#ed8936,stroke:#dd6b20,stroke-width:2px,color:#fff
+    classDef summaryStyle fill:#f56565,stroke:#e53e3e,stroke-width:2px,color:#fff
     classDef dataStyle fill:#4299e1,stroke:#3182ce,stroke-width:2px,color:#fff
     
     class WebUI,RestAPI clientStyle
-    class ResearchAgent,SpeechAgent agentStyle
+    class Orchestrator orchestratorStyle
+    class ResearchAgent,SpeechAgent collectionStyle
     class SentimentAgent,ExtractionAgent,RiskAgent analysisStyle
-    class Database,Redis dataStyle
+    class SummaryAgent summaryStyle
+    class Database,Cache dataStyle
 ```
 
-### Processing Flow
+### Agent Capabilities
 
 ```mermaid
-sequenceDiagram
-    participant User
-    participant API
-    participant Orchestrator
-    participant Research as Research Agent
-    participant Speech as Speech Agent
-    participant Analysis as Analysis Agents
-    participant DB as Database
-    
-    User->>API: Submit Analysis Request
-    API->>Orchestrator: Process Request
-    
-    alt Text News
-        Orchestrator->>DB: Save News Content
-    else Audio News
-        Orchestrator->>Speech: Transcribe Audio
-        Speech->>DB: Save Transcription
-    else Search Request
-        Orchestrator->>Research: Search News
-        Research->>DB: Save Articles
+graph LR
+    subgraph "Data Collection"
+        RA[Research Agent<br/>━━━━━━━━━━<br/>• Exa API Search<br/>• News Filtering<br/>• Source Validation]
+        SA[Speech Agent<br/>━━━━━━━━━━<br/>• Audio Transcription<br/>• Whisper API<br/>• Quality Check]
     end
     
-    Orchestrator->>Analysis: Analyze Content (Parallel/Sequential)
-    
-    par Sentiment Analysis
-        Analysis->>Analysis: Analyze Sentiment
-    and Entity Extraction
-        Analysis->>Analysis: Extract Entities
-    and Risk Assessment
-        Analysis->>Analysis: Assess Risks
+    subgraph "Analysis Pipeline"
+        SEA[Sentiment Agent<br/>━━━━━━━━━━<br/>• Market Sentiment<br/>• Fear/Greed Index<br/>• Trend Analysis]
+        EA[Extraction Agent<br/>━━━━━━━━━━<br/>• Entity Recognition<br/>• Event Detection<br/>• Metrics Extraction]
+        RIA[Risk Agent<br/>━━━━━━━━━━<br/>• Risk Assessment<br/>• Impact Analysis<br/>• Recommendations]
     end
     
-    Analysis->>DB: Save Results
-    Orchestrator->>API: Return Results
-    API->>User: Analysis Complete
+    subgraph "Report Generation"
+        SUA[Summary Agent<br/>━━━━━━━━━━<br/>• Report Synthesis<br/>• Key Insights<br/>• Action Items]
+    end
+    
+    RA --> SEA
+    RA --> EA
+    RA --> RIA
+    SA --> SEA
+    SA --> EA
+    SA --> RIA
+    SEA --> SUA
+    EA --> SUA
+    RIA --> SUA
+    
+    classDef collectionClass fill:#48bb78,stroke:#38a169,color:#fff
+    classDef analysisClass fill:#ed8936,stroke:#dd6b20,color:#fff
+    classDef summaryClass fill:#e53e3e,stroke:#c53030,color:#fff
+    
+    class RA,SA collectionClass
+    class SEA,EA,RIA analysisClass
+    class SUA summaryClass
 ```
 
 ## Docker Deployment
