@@ -1,0 +1,89 @@
+# Development Environment Configuration
+# Inherits from config.yaml and overrides specific settings
+
+app:
+  debug: true
+  
+server:
+  host: 127.0.0.1
+  port: 5000
+  workers: 1
+  
+database:
+  echo: true  # Enable SQL logging
+  
+logging:
+  handlers:
+    console:
+      level: DEBUG
+      
+  loggers:
+    app:
+      level: DEBUG
+    agents:
+      level: DEBUG
+    services:
+      level: DEBUG
+      
+  root:
+    level: DEBUG
+    
+agents:
+  # Reduce timeouts for faster development
+  research:
+    timeout: 30
+    cache_ttl: 300  # 5 minutes
+    
+  speech:
+    timeout: 60
+    
+  sentiment:
+    timeout: 30
+    
+  extraction:
+    timeout: 30
+    
+  risk:
+    timeout: 30
+    
+  summary:
+    timeout: 30
+    
+orchestrator:
+  max_concurrent_analyses: 2  # Reduce for development
+  
+rate_limiting:
+  enabled: false  # Disable rate limiting in development
+  
+cache:
+  default_timeout: 300  # 5 minutes
+  
+security:
+  cors:
+    enabled: true
+    origins:
+      - http://localhost:3000
+      - http://localhost:5000
+      - http://127.0.0.1:3000
+      - http://127.0.0.1:5000
+  csrf:
+    enabled: false  # Disable CSRF in development for easier testing
+    
+monitoring:
+  enabled: false  # Disable monitoring in development
+  
+batch:
+  enabled: false  # Disable batch jobs in development
+  
+features:
+  enable_websocket: true
+  enable_email_notifications: false
+  enable_slack_notifications: false
+  enable_export_api: true
+  enable_bulk_analysis: true
+  
+development:
+  auto_reload: true
+  debug_toolbar: true
+  profile_requests: true
+  explain_queries: true 

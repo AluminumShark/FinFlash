@@ -1,0 +1,161 @@
+# Production Environment Configuration
+# Inherits from config.yaml and overrides specific settings
+
+app:
+  debug: false
+  
+server:
+  host: 0.0.0.0
+  port: 5000
+  workers: 4
+  timeout: 300
+  
+database:
+  pool_size: 20
+  pool_timeout: 30
+  pool_recycle: 3600
+  echo: false
+  
+redis:
+  decode_responses: true
+  socket_timeout: 10
+  socket_connect_timeout: 10
+  retry_on_timeout: true
+  health_check_interval: 30
+  max_connections: 100
+  
+logging:
+  handlers:
+    console:
+      level: WARNING
+      
+    file:
+      level: INFO
+      filename: /var/log/finflash/app.log
+      maxBytes: 52428800  # 50MB
+      backupCount: 20
+      
+    error_file:
+      level: ERROR
+      filename: /var/log/finflash/error.log
+      maxBytes: 52428800  # 50MB
+      backupCount: 20
+      
+  loggers:
+    app:
+      level: INFO
+    agents:
+      level: INFO
+    services:
+      level: INFO
+      
+  root:
+    level: WARNING
+    
+agents:
+  research:
+    timeout: 180
+    max_retries: 5
+    cache_ttl: 7200  # 2 hours
+    
+  speech:
+    timeout: 300
+    max_file_size: 52428800  # 50MB
+    
+  sentiment:
+    timeout: 120
+    
+  extraction:
+    timeout: 120
+    
+  risk:
+    timeout: 120
+    
+  summary:
+    timeout: 180
+    
+orchestrator:
+  max_concurrent_analyses: 10
+  timeout_multiplier: 2.0
+  retry_failed_agents: true
+  
+rate_limiting:
+  enabled: true
+  default_limits:
+    - "1000 per hour"
+    - "100 per minute"
+  storage_backend: redis
+  
+cache:
+  enabled: true
+  backend: redis
+  default_timeout: 7200  # 2 hours
+  
+security:
+  cors:
+    enabled: true
+    allow_credentials: false
+    origins:
+      - https://app.finflash.com
+      - https://www.finflash.com
+    max_age: 86400
+  csrf:
+    enabled: true
+    time_limit: 3600
+  headers:
+    x_content_type_options: nosniff
+    x_frame_options: DENY
+    x_xss_protection: 1; mode=block
+    strict_transport_security: max-age=31536000; includeSubDomains
+    
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    include_agent_metrics: true
+    include_api_metrics: true
+    export_interval: 60
+  health_check:
+    enabled: true
+    interval: 30
+    timeout: 10
+    
+batch:
+  enabled: true
+  jobs:
+    news_crawl:
+      enabled: true
+      schedule: "0 * * * *"  # Every hour
+      max_results_per_query: 50
+      days_back: 1
+      retry_on_failure: true
+      
+    daily_report:
+      enabled: true
+      schedule: "0 2 * * *"  # 2 AM daily
+      report_types:
+        - executive
+        - detailed
+        - technical
+      time_period_hours: 24
+      send_email: true
+      
+    cleanup:
+      enabled: true
+      schedule: "0 3 * * 0"  # 3 AM every Sunday
+      retention_days: 90
+      
+features:
+  enable_websocket: true
+  enable_email_notifications: true
+  enable_slack_notifications: true
+  enable_export_api: true
+  enable_bulk_analysis: true
+  
+# Production-specific settings
+production:
+  use_cdn: true
+  compress_responses: true
+  session_cookie_secure: true
+  session_cookie_httponly: true
+  force_https: true 

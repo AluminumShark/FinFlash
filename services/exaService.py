@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import json
 from exa_py import Exa
 
-from services.rate_limiter import RateLimiter
+from services.rateLimiter import RateLimiter
 
 class ExaService:
     """Service for managing Exa API calls"""
@@ -303,6 +303,8 @@ class ExaService:
                     result_dict['highlights'] = result.highlights
                 if hasattr(result, 'summary'):
                     result_dict['summary'] = result.summary
+                if hasattr(result, 'image'):
+                    result_dict['image'] = getattr(result, 'image', None)
                 
                 results.append(result_dict)
         
@@ -330,6 +332,8 @@ class ExaService:
                     result_dict['highlights'] = result.highlights
                 if hasattr(result, 'summary'):
                     result_dict['summary'] = result.summary
+                if hasattr(result, 'image'):
+                    result_dict['image'] = getattr(result, 'image', None)
                 
                 results.append(result_dict)
         

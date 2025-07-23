@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinFlash - AI Financial Analysis System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --dark-gradient: linear-gradient(135deg, #232526 0%, #414345 100%);
+            --bg-dark: #0f0f0f;
+            --bg-dark-secondary: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #b8b8b8;
+            --accent-color: #667eea;
+            --success-color: #4ade80;
+            --danger-color: #f87171;
+            --warning-color: #fbbf24;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Navigation Bar */
+        .navbar {
+            background: rgba(15, 15, 15, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .navbar-brand i {
+            color: var(--accent-color);
+            margin-right: 8px;
+        }
+
+        .nav-link {
+            color: var(--text-secondary) !important;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary) !important;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary-gradient);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            min-height: 100vh;
+            background: var(--bg-dark);
+            position: relative;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.1) 0%, transparent 50%);
+            z-index: 0;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-title {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.8s ease 0.2s;
+            animation-fill-mode: both;
+        }
+
+        /* Search Tabs */
+        .search-container {
+            background: var(--bg-dark-secondary);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            animation: fadeInUp 0.8s ease 0.4s;
+            animation-fill-mode: both;
+        }
+
+        .nav-tabs {
+            border: none;
+            margin-bottom: 2rem;
+        }
+
+        .nav-tabs .nav-link {
+            background: transparent;
+            border: 2px solid transparent;
+            color: var(--text-secondary);
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            margin-right: 1rem;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .nav-tabs .nav-link:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: var(--accent-color);
+            color: var(--text-primary);
+        }
+
+        .nav-tabs .nav-link.active {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+        }
+
+        /* Input Styles */
+        .form-control {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            color: var(--text-primary);
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: left 0.5s ease;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            background: var(--bg-dark-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            height: 100%;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-gradient);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            border-color: var(--accent-color);
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .feature-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .feature-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Agent Flow Section */
+        .agent-flow-section {
+            background: var(--bg-dark-secondary);
+            padding: 5rem 0;
+            position: relative;
+        }
+
+        .agent-flow-diagram {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Results Section */
+        .results-card {
+            background: var(--bg-dark-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .results-card:hover {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Status Indicators */
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            position: relative;
+        }
+
+        .status-indicator::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-healthy {
+            background: var(--success-color);
+        }
+
+        .status-healthy::before {
+            background: rgba(74, 222, 128, 0.3);
+        }
+
+        .status-unhealthy {
+            background: var(--danger-color);
+        }
+
+        .status-unhealthy::before {
+            background: rgba(248, 113, 113, 0.3);
+        }
+
+        /* Loading Spinner */
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 3rem;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(102, 126, 234, 0.1);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* Sentiment Badges */
+        .sentiment-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-block;
+        }
+
+        .sentiment-positive {
+            background: rgba(74, 222, 128, 0.2);
+            color: var(--success-color);
+        }
+
+        .sentiment-negative {
+            background: rgba(248, 113, 113, 0.2);
+            color: var(--danger-color);
+        }
+
+        .sentiment-neutral {
+            background: rgba(251, 191, 36, 0.2);
+            color: var(--warning-color);
+        }
+
+        /* Risk Level Badges */
+        .risk-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-block;
+        }
+
+        .risk-low {
+            background: rgba(74, 222, 128, 0.2);
+            color: var(--success-color);
+        }
+
+        .risk-medium {
+            background: rgba(251, 191, 36, 0.2);
+            color: var(--warning-color);
+        }
+
+        .risk-high {
+            background: rgba(248, 113, 113, 0.2);
+            color: var(--danger-color);
+        }
+
+        /* Section Titles */
+        .section-title {
+            font-size: 3rem;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 1rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-subtitle {
+            font-size: 1.2rem;
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+        }
+
+        /* API Documentation */
+        .api-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .api-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--accent-color);
+        }
+
+        .api-method {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 5px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-right: 1rem;
+        }
+
+        .api-endpoint {
+            font-family: 'Courier New', monospace;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--bg-dark);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3rem 0;
+            margin-top: 5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1.2rem;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-chart-line"></i>FinFlash
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#agent-flow">System Flow</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#api">API</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#status">Status</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-bg"></div>
+        <div class="container hero-content">
+            <div class="text-center">
+                <h1 class="hero-title">Financial Intelligence Platform</h1>
+                <p class="hero-subtitle">AI-powered multi-agent system for real-time financial news analysis</p>
+                
+                <div class="row justify-content-center mt-5">
+                    <div class="col-lg-8">
+                        <div class="search-container">
+                            <!-- Tab Navigation -->
+                            <ul class="nav nav-tabs justify-content-center" id="searchTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="text-search-tab" data-bs-toggle="tab" data-bs-target="#text-search" type="button">
+                                        <i class="fas fa-search me-2"></i>Text Search
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="audio-upload-tab" data-bs-toggle="tab" data-bs-target="#audio-upload" type="button">
+                                        <i class="fas fa-microphone me-2"></i>Audio Upload
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="youtube-tab" data-bs-toggle="tab" data-bs-target="#youtube-search" type="button">
+                                        <i class="fab fa-youtube me-2"></i>YouTube
+                                    </button>
+                                </li>
+                            </ul>
+                            
+                            <!-- Tab Content -->
+                            <div class="tab-content" id="searchTabContent">
+                                <!-- Text Search Tab -->
+                                <div class="tab-pane fade show active" id="text-search" role="tabpanel">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="searchInput" placeholder="Enter stock ticker or financial topic...">
+                                        <button class="btn btn-primary" type="button" onclick="searchAndAnalyze()">
+                                            <i class="fas fa-analysis me-2"></i>Analyze
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Audio Upload Tab -->
+                                <div class="tab-pane fade" id="audio-upload" role="tabpanel">
+                                    <div class="mb-3">
+                                        <input class="form-control" type="file" id="audioFile" accept=".mp3,.mp4,.mpeg,.mpga,.m4a,.wav,.webm">
+                                        <button class="btn btn-primary mt-3" type="button" onclick="analyzeAudio()">
+                                            <i class="fas fa-upload me-2"></i>Transcribe & Analyze
+                                        </button>
+                                    </div>
+                                    <small class="text-secondary">Max file size: 16MB | Supported: MP3, WAV, M4A, WebM</small>
+                                </div>
+                                
+                                <!-- YouTube Tab -->
+                                <div class="tab-pane fade" id="youtube-search" role="tabpanel">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="youtubeUrl" placeholder="Enter YouTube video URL...">
+                                        <button class="btn btn-primary" type="button" onclick="analyzeYouTube()">
+                                            <i class="fab fa-youtube me-2"></i>Analyze
+                                        </button>
+                                    </div>
+                                    <small class="text-secondary">Enter a YouTube URL of financial news to transcribe and analyze</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Results Section -->
+    <section id="results-section" class="py-5" style="display: none;">
+        <div class="container">
+            <h2 class="section-title">Analysis Results</h2>
+            <div id="loading-container" class="loading-container" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p class="mt-3 text-secondary">Analyzing financial news...</p>
+            </div>
+            <div id="results-container"></div>
+        </div>
+    </section>
+
+    <!-- Agent Flow Section -->
+    <section id="agent-flow" class="agent-flow-section">
+        <div class="container">
+            <h2 class="section-title">Multi-Agent System Architecture</h2>
+            <p class="section-subtitle">Intelligent agents working together to provide comprehensive financial analysis</p>
+            
+            <div class="agent-flow-diagram">
+                <div id="mermaid-diagram"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-5">
+        <div class="container">
+            <h2 class="section-title">Intelligent Agents</h2>
+            <p class="section-subtitle">Specialized AI agents for comprehensive financial analysis</p>
+            
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-search-dollar"></i>
+                        </div>
+                        <h5 class="feature-title">Research Agent</h5>
+                        <p class="feature-description">Searches and collects financial news from premium sources using advanced Exa API with intelligent filtering.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-microphone-alt"></i>
+                        </div>
+                        <h5 class="feature-title">Speech Agent</h5>
+                        <p class="feature-description">Transcribes audio financial news and podcasts using OpenAI Whisper technology with financial terminology optimization.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-smile"></i>
+                        </div>
+                        <h5 class="feature-title">Sentiment Agent</h5>
+                        <p class="feature-description">Analyzes market sentiment, fear/greed indicators, and emotional tone from news content using advanced NLP.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <h5 class="feature-title">Extraction Agent</h5>
+                        <p class="feature-description">Extracts key entities, events, financial metrics, and structured data from unstructured news content.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h5 class="feature-title">Risk Agent</h5>
+                        <p class="feature-description">Assesses market risks, evaluates investment implications, and provides actionable recommendations.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <h5 class="feature-title">Summary Agent</h5>
+                        <p class="feature-description">Generates comprehensive reports by synthesizing insights from all other agents into actionable intelligence.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- API Section -->
+    <section id="api" class="py-5 bg-dark">
+        <div class="container">
+            <h2 class="section-title">API Documentation</h2>
+            <p class="section-subtitle">RESTful endpoints for programmatic access</p>
+            
+            <div class="row">
+                <div class="col-lg-6">
+                    <h4 class="text-white mb-4">Analysis Endpoints</h4>
+                    <div class="api-card">
+                        <span class="api-method">POST</span>
+                        <span class="api-endpoint">/api/analysis/text</span>
+                        <p class="text-secondary mt-2 mb-0">Analyze text news content</p>
+                    </div>
+                    <div class="api-card">
+                        <span class="api-method">POST</span>
+                        <span class="api-endpoint">/api/analysis/audio</span>
+                        <p class="text-secondary mt-2 mb-0">Analyze audio news file</p>
+                    </div>
+                    <div class="api-card">
+                        <span class="api-method">POST</span>
+                        <span class="api-endpoint">/api/analysis/search</span>
+                        <p class="text-secondary mt-2 mb-0">Search and analyze financial news</p>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <h4 class="text-white mb-4">System Endpoints</h4>
+                    <div class="api-card">
+                        <span class="api-method" style="background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);">GET</span>
+                        <span class="api-endpoint">/health</span>
+                        <p class="text-secondary mt-2 mb-0">System health check</p>
+                    </div>
+                    <div class="api-card">
+                        <span class="api-method" style="background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);">GET</span>
+                        <span class="api-endpoint">/stats</span>
+                        <p class="text-secondary mt-2 mb-0">System statistics</p>
+                    </div>
+                    <div class="api-card">
+                        <span class="api-method" style="background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);">GET</span>
+                        <span class="api-endpoint">/api/analysis/agents</span>
+                        <p class="text-secondary mt-2 mb-0">Agent status information</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Status Section -->
+    <section id="status" class="py-5">
+        <div class="container">
+            <h2 class="section-title">System Status</h2>
+            <p class="section-subtitle">Real-time monitoring of all system components</p>
+            
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="feature-card">
+                        <h5 class="text-white mb-4">Component Health</h5>
+                        <div id="statusContainer">
+                            <div class="text-center">
+                                <div class="loading-spinner"></div>
+                                <p class="mt-3 text-secondary">Loading status...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center">
+            <p class="mb-0 text-secondary">&copy; 2024 FinFlash - Financial Intelligence Platform. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Include Mermaid for diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#667eea',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#764ba2',
+                lineColor: '#667eea',
+                secondaryColor: '#1a1a1a',
+                tertiaryColor: '#2a2a2a',
+                background: '#0f0f0f',
+                mainBkg: '#1a1a1a',
+                secondBkg: '#2a2a2a',
+                tertiaryBkg: '#3a3a3a',
+                primaryBorderColor: '#667eea',
+                secondaryBorderColor: '#764ba2',
+                tertiaryBorderColor: '#666',
+                noteBorderColor: '#667eea',
+                noteBkgColor: '#1a1a1a',
+                noteTextColor: '#fff',
+                darkMode: true
+            }
+        });
+
+        // Draw the agent flow diagram
+        const drawAgentFlowDiagram = () => {
+            const diagramDefinition = `
+            graph TB
+                Start[User Input] --> InputType{Input Type?}
+                
+                InputType -->|Text Query| ResearchAgent[<i class='fas fa-search-dollar'></i><br/>Research Agent]
+                InputType -->|Audio File| SpeechAgent[<i class='fas fa-microphone-alt'></i><br/>Speech Agent]
+                InputType -->|YouTube URL| SpeechAgent
+                
+                ResearchAgent -->|News Articles| Orchestrator[<i class='fas fa-brain'></i><br/>Orchestrator]
+                SpeechAgent -->|Transcribed Text| Orchestrator
+                
+                Orchestrator --> ProcessingMode{Processing Mode}
+                
+                ProcessingMode -->|Parallel| ParallelProcess[Parallel Processing]
+                ProcessingMode -->|Sequential| SequentialProcess[Sequential Processing]
+                
+                ParallelProcess --> SentimentAgent[<i class='fas fa-smile'></i><br/>Sentiment Agent]
+                ParallelProcess --> ExtractionAgent[<i class='fas fa-database'></i><br/>Extraction Agent]
+                ParallelProcess --> RiskAgent[<i class='fas fa-exclamation-triangle'></i><br/>Risk Agent]
+                
+                SequentialProcess --> SentimentAgent
+                SentimentAgent -->|Context| ExtractionAgent
+                ExtractionAgent -->|Context| RiskAgent
+                
+                SentimentAgent --> Results[Analysis Results]
+                ExtractionAgent --> Results
+                RiskAgent --> Results
+                
+                Results --> SummaryAgent[<i class='fas fa-file-alt'></i><br/>Summary Agent]
+                
+                SummaryAgent --> FinalReport[Final Report]
+                FinalReport --> UserInterface[User Interface]
+                
+                classDef inputClass fill:#667eea,stroke:#fff,stroke-width:2px,color:#fff
+                classDef agentClass fill:#1a1a1a,stroke:#667eea,stroke-width:2px,color:#fff
+                classDef processClass fill:#2a2a2a,stroke:#764ba2,stroke-width:2px,color:#fff
+                classDef outputClass fill:#4ade80,stroke:#fff,stroke-width:2px,color:#000
+                
+                class Start,InputType inputClass
+                class ResearchAgent,SpeechAgent,SentimentAgent,ExtractionAgent,RiskAgent,SummaryAgent,Orchestrator agentClass
+                class ProcessingMode,ParallelProcess,SequentialProcess processClass
+                class FinalReport,UserInterface outputClass
+            `;
+            
+            const element = document.getElementById('mermaid-diagram');
+            element.innerHTML = '<div class="mermaid">' + diagramDefinition + '</div>';
+            mermaid.init();
+        };
+
+        // Initialize Socket.IO connection
+        const socket = io();
+
+        socket.on('connect', function() {
+            console.log('Connected to server');
+        });
+
+        socket.on('progress_update', function(data) {
+            console.log('Progress update:', data);
+            updateProgressIndicator(data);
+        });
+
+        // Update progress indicator
+        function updateProgressIndicator(data) {
+            // You can add a progress bar or status update here
+            console.log(`Progress: ${data.agent} - ${data.status}`);
+        }
+
+        // Load system status
+        async function loadStatus() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                
+                let statusHtml = '<div class="table-responsive"><table class="table table-dark table-hover">';
+                statusHtml += '<thead><tr><th>Component</th><th>Status</th><th>Details</th></tr></thead><tbody>';
+                
+                for (const [component, status] of Object.entries(data.components)) {
+                    const isHealthy = status === 'healthy';
+                    const statusClass = isHealthy ? 'status-healthy' : 'status-unhealthy';
+                    const statusText = isHealthy ? 'Operational' : 'Error';
+                    const statusIcon = isHealthy ? 'fa-check-circle' : 'fa-exclamation-circle';
+                    
+                    statusHtml += `<tr>
+                        <td>${component.charAt(0).toUpperCase() + component.slice(1)}</td>
+                        <td>
+                            <span class="status-indicator ${statusClass}"></span>
+                            ${statusText}
+                        </td>
+                        <td><i class="fas ${statusIcon} ${isHealthy ? 'text-success' : 'text-danger'}"></i></td>
+                    </tr>`;
+                }
+                
+                statusHtml += '</tbody></table></div>';
+                document.getElementById('statusContainer').innerHTML = statusHtml;
+            } catch (error) {
+                document.getElementById('statusContainer').innerHTML = 
+                    '<div class="alert alert-danger">Failed to load system status</div>';
+            }
+        }
+
+        // Search and analyze function
+        async function searchAndAnalyze() {
+            const query = document.getElementById('searchInput').value;
+            if (!query) {
+                showAlert('Please enter a search query', 'warning');
+                return;
+            }
+
+            showResultsSection();
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/analysis/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        num_results: 5,
+                        days_back: 7,
+                        mode: 'parallel'
+                    })
+                });
+
+                showLoading(false);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    displayResults(data.result);
+                } else {
+                    const error = await response.json();
+                    displayError(error.error || 'An error occurred during analysis');
+                }
+            } catch (error) {
+                showLoading(false);
+                displayError('Network error: ' + error.message);
+            }
+        }
+
+        // Analyze audio file
+        async function analyzeAudio() {
+            const fileInput = document.getElementById('audioFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showAlert('Please select an audio file', 'warning');
+                return;
+            }
+
+            if (file.size > 16 * 1024 * 1024) {
+                showAlert('File size exceeds 16MB limit', 'danger');
+                return;
+            }
+
+            showResultsSection();
+            showLoading(true);
+
+            const formData = new FormData();
+            formData.append('audio', file);
+            formData.append('mode', 'sequential');
+
+            try {
+                const response = await fetch('/api/analysis/audio', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                showLoading(false);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    displayAudioResults(data.result);
+                } else {
+                    const error = await response.json();
+                    displayError(error.error || 'An error occurred during audio analysis');
+                }
+            } catch (error) {
+                showLoading(false);
+                displayError('Network error: ' + error.message);
+            }
+        }
+
+        // Analyze YouTube video
+        async function analyzeYouTube() {
+            const youtubeUrl = document.getElementById('youtubeUrl').value;
+            
+            if (!youtubeUrl) {
+                showAlert('Please enter a YouTube URL', 'warning');
+                return;
+            }
+
+            const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
+            if (!youtubeRegex.test(youtubeUrl)) {
+                showAlert('Please enter a valid YouTube URL', 'danger');
+                return;
+            }
+
+            showResultsSection();
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/analysis/youtube', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: youtubeUrl,
+                        mode: 'sequential'
+                    })
+                });
+
+                showLoading(false);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    displayAudioResults(data.result);
+                } else {
+                    const error = await response.json();
+                    displayError(error.error || 'YouTube analysis not implemented yet. Please upload an audio file instead.');
+                }
+            } catch (error) {
+                showLoading(false);
+                displayError('YouTube analysis feature is coming soon. Please use audio upload instead.');
+            }
+        }
+
+        // Display results function
+        function displayResults(result) {
+            const container = document.getElementById('results-container');
+            
+            if (!result || !result.analysis_results) {
+                container.innerHTML = '<div class="alert alert-warning">No results found.</div>';
+                return;
+            }
+
+            let html = '<div class="row">';
+            
+            // Display summary
+            if (result.aggregate_summary) {
+                html += `
+                    <div class="col-12 mb-4">
+                        <div class="results-card">
+                            <h5 class="text-white mb-3">
+                                <i class="fas fa-chart-line me-2"></i>Market Overview
+                            </h5>
+                            <p class="text-secondary">${result.aggregate_summary.market_overview || 'No summary available'}</p>
+                            <div class="row mt-3">
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <h3 class="text-primary">${result.total_articles || 0}</h3>
+                                        <p class="text-secondary mb-0">Total Articles</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <h3 class="text-success">${result.analyzed_successfully || 0}</h3>
+                                        <p class="text-secondary mb-0">Successfully Analyzed</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <h3 class="text-warning">${result.aggregate_summary.average_risk_score || 0}</h3>
+                                        <p class="text-secondary mb-0">Average Risk Score</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Display individual article results
+            if (result.analysis_results && Array.isArray(result.analysis_results)) {
+                result.analysis_results.forEach((item, index) => {
+                    if (item.success && item.article && item.analysis) {
+                        const article = item.article;
+                        const analysis = item.analysis;
+                        
+                        html += `
+                            <div class="col-lg-6 mb-4">
+                                <div class="results-card h-100">
+                                    <h6 class="text-white mb-3">${article.title || 'Untitled'}</h6>
+                                    <p class="text-secondary small">
+                                        <i class="fas fa-building me-1"></i>${article.source || 'Unknown'} | 
+                                        <i class="fas fa-calendar me-1"></i>${article.published_date ? new Date(article.published_date).toLocaleDateString() : 'N/A'}
+                                    </p>
+                                    <hr class="border-secondary">
+                                    <div class="analysis-details">
+                                        ${formatAnalysisResults(analysis.analysis_results)}
+                                    </div>
+                                    <a href="${article.source_url}" target="_blank" class="btn btn-sm btn-primary mt-3">
+                                        <i class="fas fa-external-link-alt me-1"></i>Read Full Article
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Format analysis results
+        function formatAnalysisResults(analysisResults) {
+            let html = '';
+            
+            // Sentiment Analysis
+            if (analysisResults.SentimentAnalysisAgent) {
+                const sentiment = analysisResults.SentimentAnalysisAgent.result;
+                if (sentiment) {
+                    const sentimentClass = sentiment.overall_sentiment === 'positive' ? 'sentiment-positive' : 
+                                         sentiment.overall_sentiment === 'negative' ? 'sentiment-negative' : 'sentiment-neutral';
+                    html += `
+                        <div class="mb-3">
+                            <strong class="text-white">Sentiment:</strong> 
+                            <span class="sentiment-badge ${sentimentClass}">${sentiment.overall_sentiment || 'N/A'}</span>
+                            <small class="text-secondary ms-2">(Score: ${sentiment.sentiment_score || 0})</small>
+                        </div>
+                    `;
+                }
+            }
+
+            // Risk Assessment
+            if (analysisResults.RiskAssessmentAgent) {
+                const risk = analysisResults.RiskAssessmentAgent.result;
+                if (risk && risk.risk_summary) {
+                    const riskClass = risk.risk_summary.overall_risk_level === 'high' ? 'risk-high' : 
+                                    risk.risk_summary.overall_risk_level === 'low' ? 'risk-low' : 'risk-medium';
+                    html += `
+                        <div class="mb-3">
+                            <strong class="text-white">Risk Level:</strong> 
+                            <span class="risk-badge ${riskClass}">${risk.risk_summary.overall_risk_level || 'N/A'}</span>
+                        </div>
+                    `;
+                }
+            }
+
+            // Key Entities
+            if (analysisResults.ExtractionAgent) {
+                const extraction = analysisResults.ExtractionAgent.result;
+                if (extraction && extraction.entities && extraction.entities.companies) {
+                    const companies = extraction.entities.companies.map(c => c.name || c).slice(0, 3);
+                    if (companies.length > 0) {
+                        html += `
+                            <div class="mb-3">
+                                <strong class="text-white">Companies:</strong> 
+                                <span class="text-secondary">${companies.join(', ')}</span>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            return html || '<p class="text-muted">No detailed analysis available</p>';
+        }
+
+        // Display audio analysis results
+        function displayAudioResults(result) {
+            const container = document.getElementById('results-container');
+            
+            if (!result) {
+                container.innerHTML = '<div class="alert alert-warning">No results found.</div>';
+                return;
+            }
+
+            let html = '<div class="row">';
+
+            // Display YouTube metadata if available
+            if (result.youtube_metadata) {
+                const meta = result.youtube_metadata;
+                html += `
+                    <div class="col-12 mb-4">
+                        <div class="results-card">
+                            <h5 class="text-white mb-3">
+                                <i class="fab fa-youtube me-2"></i>YouTube Video Information
+                            </h5>
+                            <p><strong>Title:</strong> ${meta.title || 'Unknown'}</p>
+                            <p><strong>Duration:</strong> ${meta.duration_seconds ? Math.floor(meta.duration_seconds / 60) + ' minutes' : 'Unknown'}</p>
+                            <p><strong>URL:</strong> <a href="${meta.url}" target="_blank" class="text-primary">${meta.url}</a></p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Display transcription
+            if (result.transcription_result) {
+                const trans = result.transcription_result;
+                html += `
+                    <div class="col-12 mb-4">
+                        <div class="results-card">
+                            <h5 class="text-white mb-3">
+                                <i class="fas fa-file-alt me-2"></i>Transcription
+                            </h5>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <p class="mb-0"><strong>Word Count:</strong> ${trans.word_count || 0}</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p class="mb-0"><strong>Confidence:</strong> ${trans.confidence || 'N/A'}</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p class="mb-0"><strong>Financial Terms:</strong> ${trans.has_financial_terms ? 'Yes' : 'No'}</p>
+                                </div>
+                            </div>
+                            <hr class="border-secondary">
+                            <div class="transcription-text" style="max-height: 400px; overflow-y: auto;">
+                                <h6 class="text-white">Transcribed Text:</h6>
+                                <p class="text-secondary" style="white-space: pre-wrap;">${trans.transcription || 'No transcription available'}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Display analysis results
+            if (result.analysis_result && result.analysis_result.analysis_results) {
+                html += `
+                    <div class="col-12">
+                        <div class="results-card">
+                            <h5 class="text-white mb-3">
+                                <i class="fas fa-chart-bar me-2"></i>Analysis Results
+                            </h5>
+                            ${formatAnalysisResults(result.analysis_result.analysis_results)}
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Helper functions
+        function showResultsSection() {
+            document.getElementById('results-section').style.display = 'block';
+            document.getElementById('results-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading-container').style.display = show ? 'flex' : 'none';
+            document.getElementById('results-container').style.display = show ? 'none' : 'block';
+        }
+
+        function displayError(message) {
+            const container = document.getElementById('results-container');
+            container.innerHTML = `<div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle me-2"></i>${message}
+            </div>`;
+        }
+
+        function showAlert(message, type) {
+            // You can implement a toast notification here
+            alert(message);
+        }
+
+        // Initialize on page load
+        window.onload = function() {
+            loadStatus();
+            drawAgentFlowDiagram();
+            
+            // Refresh status every 30 seconds
+            setInterval(loadStatus, 30000);
+        };
+    </script>
+</body>
+</html> 

@@ -1,0 +1,108 @@
+# Testing Environment Configuration
+# Inherits from config.yaml and overrides specific settings for tests
+
+app:
+  debug: false
+  testing: true
+  
+server:
+  host: 127.0.0.1
+  port: 5001  # Different port to avoid conflicts
+  workers: 1
+  
+database:
+  # Use in-memory SQLite for tests
+  url: sqlite:///:memory:
+  echo: false
+  
+redis:
+  # Use fakeredis or separate Redis DB for tests
+  db: 15
+  decode_responses: true
+  
+logging:
+  # Minimal logging during tests
+  handlers:
+    console:
+      level: ERROR
+      
+  loggers:
+    app:
+      level: ERROR
+    agents:
+      level: ERROR
+    services:
+      level: ERROR
+      
+  root:
+    level: ERROR
+    
+agents:
+  # Reduce all timeouts for faster tests
+  research:
+    enabled: true
+    timeout: 5
+    max_retries: 1
+    cache_ttl: 0  # Disable caching in tests
+    
+  speech:
+    enabled: true
+    timeout: 10
+    max_file_size: 1048576  # 1MB for test files
+    
+  sentiment:
+    enabled: true
+    timeout: 5
+    
+  extraction:
+    enabled: true
+    timeout: 5
+    
+  risk:
+    enabled: true
+    timeout: 5
+    
+  summary:
+    enabled: true
+    timeout: 10
+    
+orchestrator:
+  max_concurrent_analyses: 1
+  default_mode: sequential  # Sequential for predictable tests
+  timeout_multiplier: 1.0
+  retry_failed_agents: false
+  
+rate_limiting:
+  enabled: false  # Disable rate limiting in tests
+  
+cache:
+  enabled: false  # Disable caching in tests
+  
+security:
+  cors:
+    enabled: false
+  csrf:
+    enabled: false
+    
+monitoring:
+  enabled: false  # Disable monitoring in tests
+  
+batch:
+  enabled: false  # Disable batch jobs in tests
+  
+features:
+  # Enable all features for testing
+  enable_websocket: true
+  enable_email_notifications: true
+  enable_slack_notifications: true
+  enable_export_api: true
+  enable_bulk_analysis: true
+  
+# Test-specific settings
+testing:
+  use_mock_apis: true
+  mock_openai: true
+  mock_exa: true
+  mock_redis: true
+  cleanup_after_test: true
+  test_data_dir: tests/fixtures 

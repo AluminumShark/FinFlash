@@ -1,0 +1,242 @@
+# FinFlash Configuration File
+# This file contains application-wide settings that can be overridden by environment variables
+
+app:
+  name: FinFlash
+  version: 1.0.0
+  description: Financial News Multi-Agent Analysis System
+  debug: false
+  timezone: UTC
+  
+server:
+  host: 0.0.0.0
+  port: 5000
+  workers: 4
+  timeout: 300
+  
+database:
+  pool_size: 10
+  pool_timeout: 30
+  pool_recycle: 3600
+  echo: false
+  
+redis:
+  decode_responses: true
+  socket_timeout: 5
+  socket_connect_timeout: 5
+  retry_on_timeout: true
+  health_check_interval: 30
+  
+logging:
+  version: 1
+  disable_existing_loggers: false
+  
+  formatters:
+    default:
+      format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+      datefmt: '%Y-%m-%d %H:%M:%S'
+    detailed:
+      format: '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s'
+      
+  handlers:
+    console:
+      class: logging.StreamHandler
+      level: INFO
+      formatter: default
+      stream: ext://sys.stdout
+      
+    file:
+      class: logging.handlers.RotatingFileHandler
+      level: INFO
+      formatter: detailed
+      filename: logs/app.log
+      maxBytes: 10485760  # 10MB
+      backupCount: 10
+      
+    error_file:
+      class: logging.handlers.RotatingFileHandler
+      level: ERROR
+      formatter: detailed
+      filename: logs/error.log
+      maxBytes: 10485760  # 10MB
+      backupCount: 10
+      
+  loggers:
+    app:
+      level: INFO
+      handlers: [console, file]
+      propagate: false
+      
+    agents:
+      level: INFO
+      handlers: [console, file]
+      propagate: false
+      
+    services:
+      level: INFO
+      handlers: [console, file]
+      propagate: false
+      
+  root:
+    level: INFO
+    handlers: [console, file, error_file]
+
+agents:
+  # Research Agent Configuration
+  research:
+    enabled: true
+    timeout: 120
+    max_retries: 3
+    cache_ttl: 3600
+    financial_domains:
+      - bloomberg.com
+      - reuters.com
+      - wsj.com
+      - ft.com
+      - cnbc.com
+      - marketwatch.com
+      - yahoo.com/finance
+      - seekingalpha.com
+      
+  # Speech Agent Configuration  
+  speech:
+    enabled: true
+    timeout: 180
+    max_file_size: 26214400  # 25MB
+    supported_formats:
+      - mp3
+      - mp4
+      - mpeg
+      - mpga
+      - m4a
+      - wav
+      - webm
+    language_hints:
+      - en
+      - zh
+      
+  # Sentiment Analysis Agent
+  sentiment:
+    enabled: true
+    timeout: 60
+    model_temperature: 0.3
+    response_format:
+      type: json_object
+      
+  # Extraction Agent
+  extraction:
+    enabled: true
+    timeout: 60
+    model_temperature: 0.2
+    response_format:
+      type: json_object
+      
+  # Risk Assessment Agent
+  risk:
+    enabled: true
+    timeout: 60
+    model_temperature: 0.4
+    response_format:
+      type: json_object
+      
+  # Summary Agent
+  summary:
+    enabled: true
+    timeout: 90
+    model_temperature: 0.5
+    max_input_length: 50000
+    
+# Orchestrator Configuration
+orchestrator:
+  max_concurrent_analyses: 5
+  default_mode: parallel
+  timeout_multiplier: 1.5
+  retry_failed_agents: true
+  
+# API Rate Limiting
+rate_limiting:
+  enabled: true
+  default_limits:
+    - "100 per hour"
+    - "20 per minute"
+  storage_backend: redis
+  key_prefix: finflash_rate_limit
+  
+# Caching Configuration
+cache:
+  enabled: true
+  backend: redis
+  default_timeout: 3600
+  key_prefix: finflash_cache
+  
+# Security Configuration
+security:
+  cors:
+    enabled: true
+    allow_credentials: true
+    max_age: 3600
+  csrf:
+    enabled: true
+    time_limit: 3600
+  headers:
+    x_content_type_options: nosniff
+    x_frame_options: DENY
+    x_xss_protection: 1; mode=block
+    
+# Monitoring Configuration
+monitoring:
+  enabled: true
+  metrics:
+    enabled: true
+    include_agent_metrics: true
+    include_api_metrics: true
+  health_check:
+    enabled: true
+    interval: 60
+    checks:
+      - database
+      - redis
+      - openai
+      - exa
+      
+# Batch Processing Configuration
+batch:
+  enabled: true
+  jobs:
+    news_crawl:
+      enabled: true
+      schedule: "0 * * * *"  # Every hour
+      search_queries:
+        - "financial news stock market"
+        - "earnings reports companies"
+        - "economic indicators"
+      max_results_per_query: 20
+      days_back: 1
+      
+    daily_report:
+      enabled: true
+      schedule: "0 2 * * *"  # 2 AM daily
+      report_types:
+        - executive
+        - detailed
+      time_period_hours: 24
+      
+    cleanup:
+      enabled: true
+      schedule: "0 3 * * 0"  # 3 AM every Sunday
+      retention_days: 30
+      
+# Feature Flags
+features:
+  enable_websocket: true
+  enable_email_notifications: false
+  enable_slack_notifications: false
+  enable_export_api: true
+  enable_bulk_analysis: true
+  
+# Development Settings
+development:
+  auto_reload: true
+  debug_toolbar: true
+  profile_requests: false
+  explain_queries: false 

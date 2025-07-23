@@ -9,12 +9,12 @@ import time
 import os
 from pathlib import Path
 
-from services.rate_limiter import RateLimiter
+from services.rateLimiter import RateLimiter
 
 class OpenAIService:
     """Service for managing OpenAI API calls"""
     
-    def __init__(self, api_key: str, model: str = "gpt-4-turbo-preview", 
+    def __init__(self, api_key: str, model: str = "gpt-4o", 
                  rate_limit: int = 60, max_retries: int = 3):
         """
         Initialize OpenAI service
@@ -239,8 +239,12 @@ class OpenAIService:
         
         Note: Prices as of 2024 - update as needed
         """
+        # GPT-4o pricing (per 1K tokens)
+        if "gpt-4o" in model:
+            prompt_cost = prompt_tokens * 0.005 / 1000
+            completion_cost = completion_tokens * 0.015 / 1000
         # GPT-4 Turbo pricing (per 1K tokens)
-        if "gpt-4-turbo" in model or "gpt-4-1106" in model:
+        elif "gpt-4-turbo" in model or "gpt-4-1106" in model:
             prompt_cost = prompt_tokens * 0.01 / 1000
             completion_cost = completion_tokens * 0.03 / 1000
         # GPT-4 pricing
