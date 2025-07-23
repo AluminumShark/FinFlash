@@ -8,6 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <style>
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -285,6 +286,19 @@
             border-radius: 20px;
             padding: 3rem;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #mermaid-diagram {
+            text-align: center;
+            width: 100%;
+        }
+        
+        #mermaid-diagram .mermaid {
+            display: inline-block;
+            text-align: left;
         }
 
         /* Results Section */
@@ -587,6 +601,30 @@
         .btn-lg {
             padding: 0.75rem 2rem;
         }
+        
+        /* Extraction Details Styles */
+        .extraction-details {
+            background: rgba(102, 126, 234, 0.05) !important;
+            border-left: 3px solid var(--accent-color);
+        }
+        
+        .extraction-details .text-info {
+            color: #5dd3ff !important;
+        }
+        
+        blockquote {
+            border-left: 2px solid var(--accent-color);
+            padding-left: 1rem;
+            font-style: italic;
+        }
+        
+        /* Summary Card Style */
+        .summary-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border-left: 3px solid var(--accent-color);
+        }
 
         /* Responsive */
         @media (max-width: 768px) {
@@ -678,8 +716,8 @@
                                                 type="text" 
                                                 class="form-control form-control-lg bg-dark text-light border-secondary" 
                                                 id="searchInput" 
-                                                placeholder="e.g., US IPO market fintech 25 billion, Tesla earnings, Fed interest rate..."
-                                                value="US IPO market fintech debut 25 billion primary equity market sectors"
+                                                placeholder="e.g., Should I invest in Apple now? Tesla earnings report..."
+                                                value="Should I Invest Tesla now?"
                                             >
                                             <button class="btn btn-primary btn-lg" type="button" onclick="searchAndAnalyze()">
                                                 <i class="fas fa-chart-line me-2"></i>Analyze Now
@@ -930,18 +968,19 @@
                 primaryBorderColor: '#764ba2',
                 lineColor: '#667eea',
                 secondaryColor: '#1a1a1a',
-                tertiaryColor: '#2a2a2a',
+                tertiaryColor: '#1a1a1a',
                 background: '#0f0f0f',
-                mainBkg: '#1a1a1a',
-                secondBkg: '#2a2a2a',
-                tertiaryBkg: '#3a3a3a',
-                primaryBorderColor: '#667eea',
-                secondaryBorderColor: '#764ba2',
-                tertiaryBorderColor: '#666',
-                noteBorderColor: '#667eea',
-                noteBkgColor: '#1a1a1a',
-                noteTextColor: '#fff',
-                darkMode: true
+                mainBkg: '#667eea',
+                secondBkg: '#48bb78',
+                tertiaryBkg: '#ed8936',
+                clusterBkg: '#1a1a1a',
+                clusterBorder: '#667eea',
+                fontSize: '14px'
+            },
+            flowchart: {
+                useMaxWidth: false,
+                htmlLabels: true,
+                curve: 'basis'
             }
         });
 
@@ -1329,6 +1368,41 @@
                                             </div>
                                         </div>
                                     ` : ''}
+                                    ${analysis.entity_analysis ? `
+                                        <div class="accordion-item bg-dark">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#entityCollapse">
+                                                    <i class="fas fa-database me-2"></i>Entity & Data Analysis
+                                                </button>
+                                            </h2>
+                                            <div id="entityCollapse" class="accordion-collapse collapse" data-bs-parent="#detailedAnalysisAccordion">
+                                                <div class="accordion-body">
+                                                    ${analysis.entity_analysis.key_companies && analysis.entity_analysis.key_companies.length > 0 ? `
+                                                        <div class="mb-3">
+                                                            <h6 class="text-info">Key Companies</h6>
+                                                            ${analysis.entity_analysis.key_companies.map(company => `
+                                                                <div class="ms-3 mb-2">
+                                                                    <strong>${company.name}</strong>
+                                                                    <span class="badge bg-${company.impact === 'positive' ? 'success' : company.impact === 'negative' ? 'danger' : 'secondary'} ms-2">${company.impact}</span>
+                                                                    <br><small class="text-muted">${company.reason}</small>
+                                                                </div>
+                                                            `).join('')}
+                                                        </div>
+                                                    ` : ''}
+                                                    ${analysis.entity_analysis.sector_impacts ? `
+                                                        <div class="mb-3">
+                                                            <h6 class="text-info">Sector Impacts</h6>
+                                                            <ul class="list-unstyled ms-3">
+                                                                ${analysis.entity_analysis.sector_impacts.map(impact => 
+                                                                    `<li><small>${impact}</small></li>`
+                                                                ).join('')}
+                                                            </ul>
+                                                        </div>
+                                                    ` : ''}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ` : ''}
                                     ${analysis.market_implications ? `
                                         <div class="accordion-item bg-dark">
                                             <h2 class="accordion-header">
@@ -1352,7 +1426,7 @@
                 }
             }
             
-            // Display aggregate summary (existing code)
+            // Display summary
             if (result.aggregate_summary) {
                 html += `
                     <div class="col-12 mb-4">
@@ -1361,6 +1435,8 @@
                                 <i class="fas fa-chart-line me-2"></i>Market Overview
                             </h5>
                             <p class="text-secondary">${result.aggregate_summary.market_overview || 'No summary available'}</p>
+                            
+                            <!-- Statistics Row -->
                             <div class="row mt-3">
                                 <div class="col-md-4">
                                     <div class="text-center">
@@ -1381,9 +1457,24 @@
                                     </div>
                                 </div>
                             </div>
+                            
+                            <!-- Analysis Chart -->
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <canvas id="sentimentChart" width="400" height="200"></canvas>
+                                </div>
+                                <div class="col-md-6">
+                                    <canvas id="riskChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
+                
+                // Create charts after DOM is updated
+                setTimeout(() => {
+                    createAnalysisCharts(result);
+                }, 100);
             }
 
             // Display individual article results
@@ -1403,7 +1494,10 @@
                                     </p>
                                     <hr class="border-secondary">
                                     <div class="analysis-details">
-                                        ${formatAnalysisResults(analysis.analysis_results)}
+                                        ${formatAnalysisResults({
+                                            ...analysis.analysis_results,
+                                            article: article
+                                        })}
                                     </div>
                                     <a href="${article.source_url}" target="_blank" class="btn btn-sm btn-primary mt-3">
                                         <i class="fas fa-external-link-alt me-1"></i>Read Full Article
@@ -1423,54 +1517,67 @@
         function formatAnalysisResults(analysisResults) {
             let html = '';
             
-            // Sentiment Analysis
+            // News Summary from Article Content
+            const article = analysisResults.article || {};
+            if (article.summary || article.content) {
+                html += `
+                    <div class="summary-card p-3 mb-3">
+                        <h6 class="text-primary mb-2"><i class="fas fa-newspaper me-2"></i>News Summary</h6>
+                        <p class="text-light mb-0 small">${article.summary || (article.content ? article.content.substring(0, 200) + '...' : 'No summary available')}</p>
+                    </div>
+                `;
+            }
+            
+            // Market Sentiment
             if (analysisResults.SentimentAnalysisAgent) {
                 const sentiment = analysisResults.SentimentAnalysisAgent.result;
                 if (sentiment) {
-                    const sentimentClass = sentiment.overall_sentiment === 'positive' ? 'sentiment-positive' : 
-                                         sentiment.overall_sentiment === 'negative' ? 'sentiment-negative' : 'sentiment-neutral';
+                    const sentimentIcon = sentiment.overall_sentiment === 'positive' ? '📈' : 
+                                        sentiment.overall_sentiment === 'negative' ? '📉' : '➡️';
+                    const sentimentClass = sentiment.overall_sentiment === 'positive' ? 'text-success' : 
+                                         sentiment.overall_sentiment === 'negative' ? 'text-danger' : 'text-warning';
+                    
                     html += `
-                        <div class="mb-3">
-                            <strong class="text-white">Sentiment:</strong> 
-                            <span class="sentiment-badge ${sentimentClass}">${sentiment.overall_sentiment || 'N/A'}</span>
-                            <small class="text-secondary ms-2">(Score: ${sentiment.sentiment_score || 0})</small>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="fs-4 me-2">${sentimentIcon}</span>
+                            <span class="${sentimentClass} fw-bold">Market Sentiment: ${sentiment.overall_sentiment || 'neutral'}</span>
                         </div>
                     `;
                 }
             }
-
+            
             // Risk Assessment
             if (analysisResults.RiskAssessmentAgent) {
                 const risk = analysisResults.RiskAssessmentAgent.result;
                 if (risk && risk.risk_summary) {
-                    const riskClass = risk.risk_summary.overall_risk_level === 'high' ? 'risk-high' : 
-                                    risk.risk_summary.overall_risk_level === 'low' ? 'risk-low' : 'risk-medium';
+                    const riskIcon = risk.risk_summary.overall_risk_level === 'high' ? '⚠️' :
+                                   risk.risk_summary.overall_risk_level === 'low' ? '✅' : '⚡';
+                    const riskClass = risk.risk_summary.overall_risk_level === 'high' ? 'text-danger' : 
+                                    risk.risk_summary.overall_risk_level === 'low' ? 'text-success' : 'text-warning';
+                    
                     html += `
-                        <div class="mb-3">
-                            <strong class="text-white">Risk Level:</strong> 
-                            <span class="risk-badge ${riskClass}">${risk.risk_summary.overall_risk_level || 'N/A'}</span>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="fs-4 me-2">${riskIcon}</span>
+                            <span class="${riskClass} fw-bold">Risk Level: ${risk.risk_summary.overall_risk_level || 'medium'}</span>
                         </div>
                     `;
-                }
-            }
-
-            // Key Entities
-            if (analysisResults.ExtractionAgent) {
-                const extraction = analysisResults.ExtractionAgent.result;
-                if (extraction && extraction.entities && extraction.entities.companies) {
-                    const companies = extraction.entities.companies.map(c => c.name || c).slice(0, 3);
-                    if (companies.length > 0) {
-                        html += `
-                            <div class="mb-3">
-                                <strong class="text-white">Companies:</strong> 
-                                <span class="text-secondary">${companies.join(', ')}</span>
-                            </div>
-                        `;
+                    
+                    // Primary risks if available
+                    if (risk.risk_summary.primary_risks && risk.risk_summary.primary_risks.length > 0) {
+                        html += `<p class="text-muted small mb-2"><strong>Key Risk:</strong> ${risk.risk_summary.primary_risks[0]}</p>`;
                     }
                 }
             }
-
-            return html || '<p class="text-muted">No detailed analysis available</p>';
+            
+            // Investment Recommendation
+            const sentiment = analysisResults.SentimentAnalysisAgent?.result;
+            const risk = analysisResults.RiskAssessmentAgent?.result;
+            if (sentiment?.recommendation || risk?.investment_implications?.recommendation) {
+                const recommendation = sentiment?.recommendation || risk?.investment_implications?.recommendation;
+                html += `<p class="text-info small"><strong>💡 Recommendation:</strong> ${recommendation}</p>`;
+            }
+            
+            return html || '<p class="text-muted">Processing analysis...</p>';
         }
 
         // Display audio analysis results
@@ -1577,6 +1684,106 @@
             drawAgentFlowDiagram();
             loadStatus();
         });
+        
+        // Create analysis charts
+        function createAnalysisCharts(result) {
+            // Count sentiments
+            let sentimentCounts = { positive: 0, negative: 0, neutral: 0 };
+            let riskLevels = { low: 0, medium: 0, high: 0 };
+            
+            if (result.analysis_results) {
+                result.analysis_results.forEach(item => {
+                    if (item.success && item.analysis && item.analysis.analysis_results) {
+                        // Count sentiments
+                        const sentiment = item.analysis.analysis_results.SentimentAnalysisAgent?.result?.overall_sentiment;
+                        if (sentiment) {
+                            sentimentCounts[sentiment] = (sentimentCounts[sentiment] || 0) + 1;
+                        }
+                        
+                        // Count risk levels
+                        const riskLevel = item.analysis.analysis_results.RiskAssessmentAgent?.result?.risk_summary?.overall_risk_level;
+                        if (riskLevel) {
+                            riskLevels[riskLevel] = (riskLevels[riskLevel] || 0) + 1;
+                        }
+                    }
+                });
+            }
+            
+            // Create sentiment chart
+            const sentimentCtx = document.getElementById('sentimentChart');
+            if (sentimentCtx) {
+                new Chart(sentimentCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Positive', 'Negative', 'Neutral'],
+                        datasets: [{
+                            data: [sentimentCounts.positive, sentimentCounts.negative, sentimentCounts.neutral],
+                            backgroundColor: ['#4ade80', '#f87171', '#fbbf24'],
+                            borderColor: '#1a1a1a',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Sentiment Analysis',
+                                color: '#fff',
+                                font: { size: 16 }
+                            },
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#b8b8b8' }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Create risk chart
+            const riskCtx = document.getElementById('riskChart');
+            if (riskCtx) {
+                new Chart(riskCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+                        datasets: [{
+                            label: 'Articles',
+                            data: [riskLevels.low, riskLevels.medium, riskLevels.high],
+                            backgroundColor: ['#4ade80', '#fbbf24', '#f87171'],
+                            borderColor: '#1a1a1a',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { color: '#b8b8b8' },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            },
+                            x: {
+                                ticks: { color: '#b8b8b8' },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Risk Assessment',
+                                color: '#fff',
+                                font: { size: 16 }
+                            },
+                            legend: { display: false }
+                        }
+                    }
+                });
+            }
+        }
     </script>
 </body>
 </html> 
