@@ -61,5 +61,5 @@ cryptography==41.0.7
 pyjwt==2.8.0
 
 # HTTP Client
-httpx==0.25.2
-requests==2.31.0
+httpx==0.28.1
+requests==2.32.3
