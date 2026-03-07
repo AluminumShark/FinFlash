@@ -15,7 +15,7 @@ An AI-powered multi-agent system for real-time financial news analysis using Ope
 
 1. **Clone and Setup**
 ```bash
-git clone https://github.com/yourusername/FinFlash.git
+git clone https://github.com/AluminumShark/FinFlash.git
 cd FinFlash
 
 # Windows
