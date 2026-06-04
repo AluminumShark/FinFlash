@@ -20,6 +20,24 @@ function headers(settings: LLMSettings): Record<string, string> {
   return h;
 }
 
+export interface CleanupResult {
+  retention_days: number;
+  deleted: { news: number; analyses: number };
+  note?: string;
+}
+
+export async function cleanupOldData(
+  days: number,
+  settings: LLMSettings,
+): Promise<CleanupResult> {
+  const res = await fetch(`${apiBase()}/api/admin/cleanup?days=${days}`, {
+    method: "POST",
+    headers: headers(settings),
+  });
+  if (!res.ok) throw new Error(await errorText(res));
+  return res.json();
+}
+
 export async function analyzeCompany(
   company: string,
   settings: LLMSettings,

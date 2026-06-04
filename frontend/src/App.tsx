@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { AnalysisForm } from "./components/AnalysisForm";
 import { CompanyAnalysis } from "./components/CompanyAnalysis";
+import { MaintenancePanel } from "./components/MaintenancePanel";
 import { SettingsBar } from "./components/SettingsBar";
 import type { LLMSettings } from "./types";
 
@@ -48,7 +49,10 @@ export function App({ embedded = false }: { embedded?: boolean }) {
       {view === "company" ? (
         <CompanyAnalysis settings={settings} />
       ) : (
-        <AnalysisForm settings={settings} />
+        <>
+          <AnalysisForm settings={settings} />
+          <MaintenancePanel settings={settings} />
+        </>
       )}
 
       {!embedded && (

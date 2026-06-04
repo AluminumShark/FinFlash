@@ -160,3 +160,10 @@ body { margin: 0; background: var(--bg); }
 .sources a { color: var(--primary-dark); text-decoration: none; }
 .sources a:hover { text-decoration: underline; }
 .disclaimer { margin-top: 12px; font-size: 0.8rem; color: var(--muted); }
+
+.maintenance { margin-top: 24px; }
+.maintenance-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.maintenance-row label { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--muted); }
+.maintenance-row input { width: 120px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
+.run.danger { background: #e03131; }
+.run.danger:hover { background: #c92a2a; }
