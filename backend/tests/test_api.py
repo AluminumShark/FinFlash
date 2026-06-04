@@ -1,6 +1,8 @@
 """End-to-end API tests (auth, analysis, news) with a mocked LLM."""
 from __future__ import annotations
 
+from datetime import UTC
+
 import pytest
 
 
@@ -95,6 +97,57 @@ async def test_company_verdict(client, api_key, monkeypatch):
     assert body["articles_analyzed"] == 2
     assert body["verdict"]["recommendation"] == "hold"
     assert len(body["sources"]) == 2
+
+
+@pytest.mark.asyncio
+async def test_persist_dedups_analysis_rows(app):
+    """Re-analyzing the same news_id replaces rows instead of piling up duplicates."""
+    from agents.graph import run_analysis
+    from core.database import AnalysisResult, select, session_scope
+    from services.llm import LLMConfig
+
+    cfg = LLMConfig(model="openai/gpt-5")
+    for _ in range(2):
+        await run_analysis(
+            content="Acme posts strong results.", title="Acme",
+            news_id="dedup-news-1", llm=cfg, enable_rag=False,
+        )
+
+    async with session_scope() as session:
+        rows = (
+            await session.execute(
+                select(AnalysisResult).where(
+                    AnalysisResult.news_id == "dedup-news-1",
+                    AnalysisResult.agent_type == "sentiment",
+                )
+            )
+        ).scalars().all()
+    assert len(rows) == 1
+
+
+@pytest.mark.asyncio
+async def test_retention_purge_removes_old_only(app):
+    """purge_old_data deletes rows older than the cutoff and keeps recent ones."""
+    from datetime import datetime, timedelta
+
+    from core.database import News, select, session_scope
+    from core.maintenance import purge_old_data
+
+    now = datetime.now(UTC)
+    async with session_scope() as session:
+        session.add(News(id="old-1", title="old", content="x", news_type="text",
+                         collected_date=now - timedelta(days=200)))
+        session.add(News(id="new-1", title="new", content="x", news_type="text",
+                         collected_date=now - timedelta(days=1)))
+        await session.commit()
+
+    result = await purge_old_data(90)
+    assert result["news"] >= 1
+
+    async with session_scope() as session:
+        ids = set((await session.execute(select(News.id))).scalars().all())
+    assert "old-1" not in ids
+    assert "new-1" in ids
 
 
 @pytest.mark.asyncio

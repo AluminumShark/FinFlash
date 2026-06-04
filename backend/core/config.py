@@ -52,6 +52,15 @@ class Settings(BaseSettings):
     # Vector dimension of the embedding model (pgvector column width).
     # openai text-embedding-3-small = 1536; gemini text-embedding-004 = 768.
     embedding_dim: int = Field(default=1536, alias="EMBEDDING_DIM")
+
+    # RAG retrieval only considers news collected within this many days (0 = no
+    # limit), so stale articles aren't injected as "historical context".
+    rag_max_age_days: int = Field(default=90, alias="RAG_MAX_AGE_DAYS")
+
+    # Auto-purge news + analyses older than this many days (0 = keep forever).
+    # When > 0, a background task runs every `cleanup_interval_hours`.
+    data_retention_days: int = Field(default=0, alias="DATA_RETENTION_DAYS")
+    cleanup_interval_hours: int = Field(default=24, alias="CLEANUP_INTERVAL_HOURS")
     transcription_model: str = Field(
         default="openai/gpt-4o-transcribe", alias="TRANSCRIPTION_MODEL"
     )

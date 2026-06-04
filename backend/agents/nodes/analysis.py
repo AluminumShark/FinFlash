@@ -6,6 +6,8 @@ import logging
 from dataclasses import replace
 from datetime import UTC, datetime
 
+from sqlalchemy import delete
+
 from agents import prompts
 from agents.outputs import (
     ExtractionOutput,
@@ -156,6 +158,14 @@ async def persist_node(state: AnalysisState) -> dict:
                 data = state.get(agent_type)
                 if not data or "error" in data:
                     continue
+                # Dedup: replace any previous analysis of this type for this news,
+                # so re-analysing a story doesn't pile up duplicate rows.
+                await session.execute(
+                    delete(AnalysisResult).where(
+                        AnalysisResult.news_id == news_id,
+                        AnalysisResult.agent_type == agent_type,
+                    )
+                )
                 session.add(
                     AnalysisResult(
                         news_id=news_id,

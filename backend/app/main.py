@@ -1,6 +1,7 @@
 """FastAPI application entrypoint."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -12,6 +13,7 @@ from app.routers import admin, analysis, news, reports
 from core.config import get_settings
 from core.database import init_db as _init_db
 from core.database import ping
+from core.maintenance import cleanup_loop
 from core.observability import setup_observability
 
 logger = logging.getLogger(__name__)
@@ -25,7 +27,16 @@ async def lifespan(app: FastAPI):
     await _init_db()
     if settings.auth_required:
         await ensure_bootstrap_key()
+
+    cleanup_task: asyncio.Task | None = None
+    if settings.data_retention_days > 0:
+        cleanup_task = asyncio.create_task(cleanup_loop())
+        logger.info("Data retention enabled: %d days", settings.data_retention_days)
+
     yield
+
+    if cleanup_task is not None:
+        cleanup_task.cancel()
     logger.info("Shutting down FinFlash backend")
 
 
