@@ -1,13 +1,10 @@
-# ⚡ FinFlash
+# FinFlash
 
 **輸入一家公司，AI 多分析師告訴你「值不值得投資」。**
 
 FinFlash 會自動抓取一家公司的最新新聞，交給多個 AI 分析師（情緒、實體擷取、風險、
 彙整）平行分析，最後給出一句話的投資結論 —— **BUY / HOLD / SELL**，附信心、理由、
 催化劑與風險。可完全本地、免費運行（Ollama + Google News），也能用你自己的雲端模型金鑰。
-
-> 2026 重寫版：從單檔 Flask 改為 **FastAPI + LangGraph** 後端、**LiteLLM** 多供應商
-> （自帶金鑰）、**pgvector** RAG 記憶、結構化輸出，以及元件化的 **React (Vite)** 前端。
 
 ---
 
