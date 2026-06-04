@@ -154,30 +154,29 @@ async def persist_node(state: AnalysisState) -> dict:
             else:
                 news.processed = True
 
-            for agent_type in ("sentiment", "extraction", "risk", "summary"):
-                data = state.get(agent_type)
-                if not data or "error" in data:
-                    continue
-                # Dedup: replace any previous analysis of this type for this news,
-                # so re-analysing a story doesn't pile up duplicate rows.
+            # This run's successful analyses. Replace the whole prior set only when
+            # we have something to store: a total failure keeps previously-good
+            # data, and a partial failure never leaves a stale mix of old + new.
+            fresh = {
+                agent_type: data
+                for agent_type in ("sentiment", "extraction", "risk", "summary")
+                if isinstance((data := state.get(agent_type)), dict) and "error" not in data
+            }
+            if fresh:
                 await session.execute(
-                    delete(AnalysisResult).where(
-                        AnalysisResult.news_id == news_id,
-                        AnalysisResult.agent_type == agent_type,
-                    )
+                    delete(AnalysisResult).where(AnalysisResult.news_id == news_id)
                 )
-                session.add(
-                    AnalysisResult(
-                        news_id=news_id,
-                        agent_type=agent_type,
-                        result=data,
-                        confidence=float(data.get("confidence", 0.8))
-                        if isinstance(data, dict)
-                        else 0.8,
-                        model_used=state["llm"].model,
-                        analysis_date=datetime.now(UTC),
+                for agent_type, data in fresh.items():
+                    session.add(
+                        AnalysisResult(
+                            news_id=news_id,
+                            agent_type=agent_type,
+                            result=data,
+                            confidence=float(data.get("confidence", 0.8)),
+                            model_used=state["llm"].model,
+                            analysis_date=datetime.now(UTC),
+                        )
                     )
-                )
 
             await store_embedding(session, news_id, _full_content(state))
             await session.commit()

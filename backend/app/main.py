@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from contextlib import asynccontextmanager
 
@@ -37,6 +38,8 @@ async def lifespan(app: FastAPI):
 
     if cleanup_task is not None:
         cleanup_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await cleanup_task
     logger.info("Shutting down FinFlash backend")
 
 

@@ -126,6 +126,33 @@ async def test_persist_dedups_analysis_rows(app):
 
 
 @pytest.mark.asyncio
+async def test_persist_partial_failure_replaces_without_stale_mix(app):
+    """A re-run where one node failed leaves no stale row from the prior run."""
+    from agents.nodes.analysis import persist_node
+    from core.database import AnalysisResult, select, session_scope
+    from services.llm import LLMConfig
+
+    base = {
+        "news_id": "p1", "title": "t", "content": "c",
+        "llm": LLMConfig(model="openai/gpt-5"), "enable_rag": False,
+    }
+    # First run: all four analysts succeed.
+    await persist_node({**base, "sentiment": {"v": 1}, "extraction": {"v": 1},
+                        "risk": {"v": 1}, "summary": {"v": 1}})
+    # Second run: risk failed.
+    await persist_node({**base, "sentiment": {"v": 2}, "extraction": {"v": 2},
+                        "risk": {"error": "boom"}, "summary": {"v": 2}})
+
+    async with session_scope() as session:
+        types = sorted(
+            (await session.execute(
+                select(AnalysisResult.agent_type).where(AnalysisResult.news_id == "p1")
+            )).scalars().all()
+        )
+    assert types == ["extraction", "sentiment", "summary"]  # no stale 'risk'
+
+
+@pytest.mark.asyncio
 async def test_retention_purge_removes_old_only(app):
     """purge_old_data deletes rows older than the cutoff and keeps recent ones."""
     from datetime import datetime, timedelta

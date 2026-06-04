@@ -34,10 +34,30 @@ async def search_news(
     if using_exa():
         from services.exa import ExaService
 
-        return await ExaService().search_financial_news(
+        articles = await ExaService().search_financial_news(
             query, days_back=days_back, num_results=num_results
         )
-    return await _google_news_rss(query, num_results)
+    else:
+        articles = await _google_news_rss(query, num_results)
+    return _dedupe(articles)
+
+
+def _dedupe(articles: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Drop duplicate articles by id, preserving order.
+
+    News feeds sometimes return the same story twice; downstream we analyze
+    articles concurrently keyed by id, so duplicates would race on the same
+    news_id (and one would be lost). Removing them up front prevents that.
+    """
+    seen: set[str | None] = set()
+    unique = []
+    for a in articles:
+        aid = a.get("id")
+        if aid in seen:
+            continue
+        seen.add(aid)
+        unique.append(a)
+    return unique
 
 
 def _has_cjk(text: str) -> bool:

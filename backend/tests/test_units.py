@@ -39,6 +39,23 @@ async def test_spend_quota(monkeypatch):
         await qm.add_cost("k2", 0.02)
 
 
+@pytest.mark.asyncio
+async def test_search_news_dedupes_by_id(monkeypatch):
+    from services import news_search
+
+    async def fake_rss(query, num_results):
+        return [
+            {"id": "x", "title": "a", "content": "c1"},
+            {"id": "x", "title": "b", "content": "c2"},  # duplicate id
+            {"id": "y", "title": "c", "content": "c3"},
+        ]
+
+    monkeypatch.setattr(news_search, "using_exa", lambda: False)
+    monkeypatch.setattr(news_search, "_google_news_rss", fake_rss)
+    articles = await news_search.search_news("q", num_results=5)
+    assert [a["id"] for a in articles] == ["x", "y"]
+
+
 def test_resolve_llm_defaults():
     resolved = resolve_llm(x_llm_provider=None, x_llm_model=None, x_llm_key=None)
     assert isinstance(resolved.cfg, LLMConfig)
