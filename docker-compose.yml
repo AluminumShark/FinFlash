@@ -1,62 +1,66 @@
-version: '3.8'
-
 services:
-  # Flask Application
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "5000:5000"
+  db:
+    image: pgvector/pgvector:pg16
     environment:
-      - FLASK_ENV=production
-      - DATABASE_URL=postgresql://finflash:finflash123@postgres:5432/financial_news
-      - REDIS_URL=redis://redis:6379/0
-    env_file:
-      - .env
-    depends_on:
-      - postgres
-      - redis
-    volumes:
-      - ./logs:/app/logs
-      - ./data:/app/data
-    restart: unless-stopped
-
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_USER=finflash
-      - POSTGRES_PASSWORD=finflash123
-      - POSTGRES_DB=financial_news
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      POSTGRES_USER: finflash
+      POSTGRES_PASSWORD: finflash
+      POSTGRES_DB: finflash
     ports:
       - "5432:5432"
-    restart: unless-stopped
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finflash"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  # Redis Cache
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build: ./backend
+    environment:
+      FINFLASH_ENV: production
+      # Auth is OFF by default so you can just run it. To gate a PUBLIC deploy,
+      # set REQUIRE_API_KEY=true (a key is then minted + logged on first start).
+      REQUIRE_API_KEY: ${REQUIRE_API_KEY:-false}
+      DATABASE_URL: postgresql+asyncpg://finflash:finflash@db:5432/finflash
+      REDIS_URL: redis://redis:6379/0
+      CORS_ORIGINS: http://localhost:8080
+      # Provide at least one provider key + EXA_API_KEY via a root .env file:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      EXA_API_KEY: ${EXA_API_KEY:-}
+      OLLAMA_API_BASE: ${OLLAMA_API_BASE:-}
+      LLM_MAX_CONCURRENCY: ${LLM_MAX_CONCURRENCY:-0}
+      DEFAULT_LLM_MODEL: ${DEFAULT_LLM_MODEL:-openai/gpt-5}
+      DEFAULT_EMBEDDING_MODEL: ${DEFAULT_EMBEDDING_MODEL:-openai/text-embedding-3-small}
+      EMBEDDING_DIM: ${EMBEDDING_DIM:-1536}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
     restart: unless-stopped
 
-  # Nginx (optional, for production)
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./static:/usr/share/nginx/html/static
+  frontend:
+    build: ./frontend
     depends_on:
-      - app
+      - backend
+    ports:
+      - "8080:80"
     restart: unless-stopped
 
 volumes:
-  postgres_data:
-  redis_data: 
+  pgdata:
