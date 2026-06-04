@@ -151,6 +151,60 @@ async def test_retention_purge_removes_old_only(app):
 
 
 @pytest.mark.asyncio
+async def test_cleanup_endpoint_respects_min_age_floor(client, api_key):
+    """days below CLEANUP_MIN_AGE_DAYS is clamped up, protecting recent data."""
+    from datetime import datetime, timedelta
+
+    from core.database import News, select, session_scope
+
+    now = datetime.now(UTC)
+    async with session_scope() as session:
+        session.add(News(id="recent", title="r", content="x", news_type="text",
+                         collected_date=now - timedelta(days=3)))
+        session.add(News(id="ancient", title="a", content="x", news_type="text",
+                         collected_date=now - timedelta(days=100)))
+        await session.commit()
+
+    resp = await client.post("/api/admin/cleanup?days=1", headers={"X-API-Key": api_key})
+    assert resp.status_code == 200
+    assert resp.json()["retention_days"] == 7  # clamped up from 1 to the floor
+
+    async with session_scope() as session:
+        ids = set((await session.execute(select(News.id))).scalars().all())
+    assert "recent" in ids  # 3 days old < 7-day floor → protected
+    assert "ancient" not in ids
+
+
+@pytest.mark.asyncio
+async def test_purge_removes_orphan_analyses(app):
+    """Purging old news also removes its analyses even if they're recent."""
+    from datetime import datetime, timedelta
+
+    from core.database import AnalysisResult, News, select, session_scope
+    from core.maintenance import purge_old_data
+
+    now = datetime.now(UTC)
+    async with session_scope() as session:
+        session.add(News(id="oldnews", title="o", content="x", news_type="text",
+                         collected_date=now - timedelta(days=200)))
+        session.add(AnalysisResult(news_id="oldnews", agent_type="sentiment",
+                                   result={}, analysis_date=now))  # recent analysis
+        await session.commit()
+
+    await purge_old_data(90)
+
+    async with session_scope() as session:
+        news_ids = set((await session.execute(select(News.id))).scalars().all())
+        orphans = (
+            await session.execute(
+                select(AnalysisResult).where(AnalysisResult.news_id == "oldnews")
+            )
+        ).scalars().all()
+    assert "oldnews" not in news_ids
+    assert orphans == []  # orphan removed despite being recent
+
+
+@pytest.mark.asyncio
 async def test_create_key_via_admin(client, api_key):
     resp = await client.post(
         "/api/admin/keys", json={"name": "ci"}, headers={"X-API-Key": api_key}

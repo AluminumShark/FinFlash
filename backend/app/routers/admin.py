@@ -30,7 +30,19 @@ async def my_usage(api_key: ApiKey = Depends(require_api_key)):
 
 @router.post("/cleanup")
 async def cleanup(days: int | None = None, _: ApiKey = Depends(require_api_key)):
-    """Purge news + analyses older than `days` (defaults to DATA_RETENTION_DAYS)."""
-    retention = days if days is not None else get_settings().data_retention_days
-    deleted = await purge_old_data(retention)
-    return {"retention_days": retention, "deleted": deleted}
+    """Purge news + analyses older than `days` (defaults to DATA_RETENTION_DAYS).
+
+    `days` is clamped up to CLEANUP_MIN_AGE_DAYS so this endpoint can never delete
+    recent data, even on an auth-disabled instance.
+    """
+    settings = get_settings()
+    requested = days if days is not None else settings.data_retention_days
+    if requested <= 0:
+        return {
+            "retention_days": 0,
+            "deleted": {"news": 0, "analyses": 0},
+            "note": "Nothing purged. Pass ?days=N or set DATA_RETENTION_DAYS.",
+        }
+    effective = max(requested, settings.cleanup_min_age_days)
+    deleted = await purge_old_data(effective)
+    return {"retention_days": effective, "deleted": deleted}

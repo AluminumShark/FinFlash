@@ -5,7 +5,7 @@ import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import delete
+from sqlalchemy import delete, or_, select
 
 from core.config import get_settings
 from core.database import AnalysisResult, News, session_scope
@@ -14,15 +14,25 @@ logger = logging.getLogger(__name__)
 
 
 async def purge_old_data(days: int) -> dict[str, int]:
-    """Delete news + analysis rows older than ``days`` (no-op if days <= 0)."""
+    """Delete news older than ``days`` plus any old or now-orphaned analyses.
+
+    No-op if ``days <= 0``. Analyses are removed when they are older than the
+    cutoff OR their news row no longer exists, so the purge never leaves an
+    analysis pointing at a deleted story.
+    """
     if days <= 0:
         return {"news": 0, "analyses": 0}
     cutoff = datetime.now(UTC) - timedelta(days=days)
     async with session_scope() as session:
-        analyses = await session.execute(
-            delete(AnalysisResult).where(AnalysisResult.analysis_date < cutoff)
-        )
         news = await session.execute(delete(News).where(News.collected_date < cutoff))
+        analyses = await session.execute(
+            delete(AnalysisResult).where(
+                or_(
+                    AnalysisResult.analysis_date < cutoff,
+                    AnalysisResult.news_id.not_in(select(News.id)),
+                )
+            )
+        )
         await session.commit()
     # rowcount exists on the runtime CursorResult (ty's stub doesn't model it).
     result = {

@@ -61,6 +61,10 @@ class Settings(BaseSettings):
     # When > 0, a background task runs every `cleanup_interval_hours`.
     data_retention_days: int = Field(default=0, alias="DATA_RETENTION_DAYS")
     cleanup_interval_hours: int = Field(default=24, alias="CLEANUP_INTERVAL_HOURS")
+    # Safety floor for the manual cleanup endpoint: it can never delete anything
+    # newer than this many days, so an open (auth-off) instance can't be used to
+    # wipe recent data.
+    cleanup_min_age_days: int = Field(default=7, alias="CLEANUP_MIN_AGE_DAYS")
     transcription_model: str = Field(
         default="openai/gpt-4o-transcribe", alias="TRANSCRIPTION_MODEL"
     )
