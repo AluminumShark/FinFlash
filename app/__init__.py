@@ -1,3 +1,0 @@
-"""
-FinFlash Flask Application Package
-""" 

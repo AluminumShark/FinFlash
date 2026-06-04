@@ -70,3 +70,16 @@ htmlcov/
 docs/_build/
 docs/_static/
 docs/_templates/
+
+# Frontend (Node)
+node_modules/
+frontend/dist/
+frontend/dist-widget/
+
+# uv
+.venv/
+*.db-journal
+
+# Claude
+.claude/
+CLAUDE.md
